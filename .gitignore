@@ -1,0 +1,28 @@
+# Root-level environment secrets (keep .env.example visible)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Node/npm (if any at root)
+node_modules/
+npm-debug.log*
+
+# Build artifacts
+dist/
+build/

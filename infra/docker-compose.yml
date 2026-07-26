@@ -1,0 +1,112 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ecotrace
+      POSTGRES_USER: ecotrace
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432"    # local only, never expose to internet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecotrace"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      registration-service:
+        condition: service_healthy
+      ingestion-http:
+        condition: service_healthy
+
+  # ── Ingestion HTTP Service (replaces OTel Collector) ─────────────────────
+  ingestion-http:
+    build:
+      context: ../services/ingestion-http
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NATS_URL: nats://nats:4222
+      PORT: "4318"
+    ports:
+      - "127.0.0.1:4318:4318"
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4318/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      JWT_SECRET:          ${JWT_SECRET}
+      JWT_EXPIRY_MINUTES:  "60"
+      PORT:                "3001"
+    ports:
+      - "127.0.0.1:3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  registration-service:
+    build:
+      context: ../services/registration-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      BOOTSTRAP_TOKEN: ${BOOTSTRAP_TOKEN}
+      JWT_SECRET:      ${JWT_SECRET}
+      DATABASE_URL:    postgres://ecotrace:${POSTGRES_PASSWORD}@postgres:5432/ecotrace
+      PORT:            "3002"
+    ports:
+      - "127.0.0.1:3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata:
