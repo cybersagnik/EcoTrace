@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - ecotrace
 
   nats:
     image: nats:2.10-alpine
@@ -30,6 +32,8 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+    networks:
+      - ecotrace
 
   nginx:
     image: nginx:1.25-alpine
@@ -47,6 +51,8 @@ services:
         condition: service_healthy
       ingestion-http:
         condition: service_healthy
+    networks:
+      - ecotrace
 
   # ── Ingestion HTTP Service (replaces OTel Collector) ─────────────────────
   ingestion-http:
@@ -67,6 +73,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - ecotrace
   ingestion-worker:
     build:
       context: ../services/ingestion-worker
@@ -86,6 +94,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      - ecotrace
   auth-service:
     build:
       context: ../services/auth-service
@@ -103,6 +113,8 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+    networks:
+      - ecotrace
 
   registration-service:
     build:
@@ -125,6 +137,73 @@ services:
       timeout: 3s
       retries: 5
       start_period: 15s
+    networks:
+      - ecotrace
+
+  # ═══════════════════════════════════════════════════════════════
+  # PHASE 2: Attribution Engine
+  # Polls emissions_raw, calculates carbon_g, aggregates daily
+  # ═══════════════════════════════════════════════════════════════
+  attribution-engine:
+    build:
+      context: ../services/attribution-engine
+      dockerfile: Dockerfile
+    container_name: ecotrace-attribution-engine
+    environment:
+      DATABASE_URL: postgresql://ecotrace:${POSTGRES_PASSWORD}@postgres:5432/ecotrace
+      ATTRIBUTION_INTERVAL_MS: "30000"
+      AGGREGATION_INTERVAL_MS: "300000"
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ecotrace
+
+  # ═══════════════════════════════════════════════════════════════
+  # PHASE 2: REST API
+  # /api/* endpoints with JWT auth, device mgmt, recommendations
+  # ═══════════════════════════════════════════════════════════════
+  api:
+    build:
+      context: ../services/api
+      dockerfile: Dockerfile
+    container_name: ecotrace-api
+    ports:
+      - "127.0.0.1:3003:3003"
+    environment:
+      DATABASE_URL: postgresql://ecotrace:${POSTGRES_PASSWORD}@postgres:5432/ecotrace
+      AUTH_SERVICE_URL: http://auth-service:3001
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      PORT: "3003"
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ecotrace
 
 volumes:
   pgdata:
+
+networks:
+  ecotrace:
+    driver: bridge

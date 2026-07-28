@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+COPY package.json package.json
+RUN npm install --production
+
+COPY index.js index.js
+
+EXPOSE 3003
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:3003/health || exit 1
+
+CMD ["node", "index.js"]
