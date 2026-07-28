@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 const express = require('express');
 const { connect, StringCodec } = require('nats');
 
@@ -6,8 +6,8 @@ const app  = express();
 const PORT = process.env.PORT || 4318;
 const NATS_URL = process.env.NATS_URL || 'nats://nats:4222';
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.raw({ type: 'application/x-protobuf', limit: '1mb' }));
+// Parse all JSON regardless of content-type
+app.use(express.json({ limit: '1mb', type: () => true }));
 
 let natsClient = null;
 const sc = StringCodec();
@@ -40,12 +40,27 @@ app.post('/v1/traces', (req, res) => {
   const deviceId    = req.headers['x-device-id']    || 'unknown';
   const deviceClass = req.headers['x-device-class'] || 'unknown';
 
+  console.log(`[ingestion] received POST /v1/traces from device_id=${deviceId}`);
+  console.log(`[ingestion] request body type: ${typeof req.body}`);
+  console.log(`[ingestion] request body keys: ${req.body ? Object.keys(req.body).join(', ') : 'none'}`);
+
+  // Extract the _ecotrace_envelope from the OTLP body (sent by agent)
+  const ecotrace_envelope = req.body?._ecotrace_envelope;
+  
+  if (ecotrace_envelope) {
+    console.log(`[ingestion] found _ecotrace_envelope with device_id=${ecotrace_envelope.device_id || ecotrace_envelope.DeviceId}`);
+  } else {
+    console.log(`[ingestion] WARNING: _ecotrace_envelope not found in body`);
+    if (req.body?.resourceSpans) {
+      console.log(`[ingestion] body contains resourceSpans (OTLP format)`);
+    }
+  }
+
   const payload = JSON.stringify({
-    received_at:   new Date().toISOString(),
-    device_id:     deviceId,
-    device_class:  deviceClass,
-    content_type:  req.headers['content-type'],
-    body:          req.body,
+    received_at:        new Date().toISOString(),
+    device_id:          deviceId,
+    device_class:       deviceClass,
+    _ecotrace_envelope: ecotrace_envelope,
   });
 
   try {

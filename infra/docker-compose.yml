@@ -35,8 +35,8 @@ services:
     image: nginx:1.25-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs:ro
@@ -67,7 +67,25 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-
+  ingestion-worker:
+    build:
+      context: ../services/ingestion-worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NATS_URL:     nats://nats:4222
+      DATABASE_URL: postgres://ecotrace:${POSTGRES_PASSWORD}@postgres:5432/ecotrace
+    depends_on:
+      nats:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('pg').Pool && process.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
   auth-service:
     build:
       context: ../services/auth-service
