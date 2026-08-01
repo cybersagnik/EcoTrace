@@ -1,0 +1,6 @@
+{
+  "bootstrap_token": "phase0-bootstrap-token-dev-only",
+  "device_class": "linux",
+  "hostname": "phase0-smoketest",
+  "os": "Windows 11"
+}

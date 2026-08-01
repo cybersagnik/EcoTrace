@@ -1,0 +1,39 @@
+syntax = "proto3";
+package ecotrace.telemetry;
+option go_package = "github.com/Ecotrace/agent/schema";
+
+// TelemetryEnvelope is the canonical message shape for every device class.
+// Tier 1 (Linux, Windows): generated Go struct via protoc-gen-go.
+// Tier 2 (IoT, PLC): generated C/Rust headers via protoc-gen-c / protoc-gen-rust.
+// No consumer hand-writes this struct.
+message TelemetryEnvelope {
+  // ── Identity ────────────────────────────────
+  string schema_version    = 1;   // e.g. "1.0"
+  string collector_version = 2;   // agent binary semver
+  string device_id         = 3;   // registered device_id, matches JWT claim
+  string device_class      = 4;   // "linux" | "windows" | "iot" | "plc"
+  string operating_system  = 5;   // e.g. "Ubuntu 22.04"
+  string hostname          = 6;
+
+  // ── Timing ──────────────────────────────────
+  int64  window_start_ms   = 7;   // epoch ms, start of collection window
+  int64  window_end_ms     = 8;   // epoch ms, end of collection window
+
+  // ── Core metrics (all device classes) ───────
+  float  cpu_usage         = 9;   // 0.0–100.0
+  float  memory_usage      = 10;  // 0.0–100.0
+  int64  network_sent      = 11;  // bytes
+  int64  network_received  = 12;  // bytes
+
+  // ── Workstation extensions ───────────────────
+  float  gpu_usage         = 20;  // 0.0–100.0, 0 if absent
+  float  cpu_temp_celsius  = 21;  // 0 if sensor unavailable
+
+  // ── Server extensions ────────────────────────
+  float  load_average_1m   = 30;
+  int32  process_count     = 31;
+
+  // ── IoT extensions (Tier 2) ─────────────────
+  float  battery_voltage   = 40;
+  float  sensor_value      = 41;
+}

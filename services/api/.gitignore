@@ -1,0 +1,26 @@
+# Node.js / API dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (secrets must not be committed)
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Runtime
+.DS_Store
+Thumbs.db
+dist/
+build/
