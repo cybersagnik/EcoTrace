@@ -1,0 +1,215 @@
+/* EcoTrace Design System v1.0 Typography & Micro-Interaction System */
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Typography Hierarchy Rules (Inter, 700 weight, -0.03em letter spacing) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+h1 {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
+h2 {
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+}
+
+h3 {
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+}
+
+h4 {
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+}
+
+h5, h6 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+p {
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+label {
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+input, select, textarea, button {
+  font-family: var(--font-body);
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}
+
+/* Design System v1.0 Glassmorphism Panel */
+.glass-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] .glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+[data-theme="dark"] .glass-panel {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+}
+
+/* Card Micro-Interactions (Hover -6px, 300ms transition) */
+.eco-card {
+  border-radius: var(--radius-card);
+  background-color: var(--panel-solid);
+  border: 1px solid var(--border);
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1), border-color 300ms ease;
+}
+
+.eco-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+/* Design System Button Utility Classes (16px Radius) */
+.btn-primary {
+  display: inline-flex;
+  items-center: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-button);
+  background-color: #16A34A;
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #15803D;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.35);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  items-center: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-button);
+  background-color: transparent;
+  border: 1px solid #16A34A;
+  color: #16A34A;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #DCFCE7;
+  color: #166534;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: rgba(22, 163, 74, 0.15);
+  color: #4ADE80;
+}
+
+/* Design System Input Utility Classes (14px Radius) */
+.input-eco {
+  border-radius: var(--radius-input);
+  background-color: var(--elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  transition: all 300ms ease;
+}
+
+.input-eco:focus {
+  outline: none;
+  border-color: #16A34A;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
+}
+
+/* Editorial Vignette Mask */
+.mask-radial-vignette {
+  mask-image: radial-gradient(circle at 75% 35%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 80%);
+  -webkit-mask-image: radial-gradient(circle at 75% 35%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 80%);
+}
+
+/* Select & Option Dropdown Styling */
+select option {
+  background-color: var(--panel-solid);
+  color: var(--text-primary);
+  padding: 8px 12px;
+}
+
+[data-theme="dark"] select option {
+  background-color: #0F172A !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="light"] select option {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 9999px;
+}

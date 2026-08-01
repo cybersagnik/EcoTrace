@@ -1,0 +1,180 @@
+/**
+ * ECOTRACE DESIGN SYSTEM v1.0 TOKENS
+ * Enterprise Sustainability Observability Platform Design System
+ */
+
+:root,
+[data-theme="dark"] {
+  /* Surface Elevation System (Dark Mode) */
+  --bg-rgb: 2, 6, 23;                  /* #020617 Deep Obsidian Cyber-Navy */
+  --panel-solid-rgb: 15, 23, 42;       /* #0F172A Primary Card Surface */
+  --panel-rgb: 15, 23, 42;
+  --elevated-rgb: 30, 41, 59;          /* #1E293B Surface Level 2 */
+  --elevated-hover-rgb: 51, 65, 85;    /* #334155 Elevated Surface Hover */
+
+  /* Navigation & Chrome */
+  --sidebar-rgb: 15, 23, 42;           /* Sidebar surface #0F172A */
+  --navbar-rgb: 15, 23, 42;            /* Top Navbar surface #0F172A */
+  --modal-rgb: 15, 23, 42;             /* Dialog surface #0F172A */
+  --dropdown-rgb: 30, 41, 59;          /* Popover surface #1E293B */
+
+  /* Borders & Focus Glows */
+  --border-rgb: 51, 65, 85;            /* #334155 Dark Border */
+  --border-soft-rgb: 30, 41, 59;
+  --border-glow-rgb: 22, 163, 74;      /* #16A34A Emerald Glow */
+
+  /* Typography Colors (Dark Mode) */
+  --text-rgb: 248, 250, 252;           /* #F8FAFC Primary text */
+  --text-muted-rgb: 203, 213, 225;     /* #CBD5E1 Secondary text */
+  --text-faint-rgb: 148, 163, 184;     /* #94A3B8 Muted text */
+  --text-inverse-rgb: 15, 23, 42;      /* Contrast text on bright badges */
+
+  /* Brand Primary Identity */
+  --emerald-rgb: 22, 163, 74;          /* #16A34A Emerald Green */
+  --forest-rgb: 22, 101, 52;           /* #166534 Forest Green */
+  --sky-rgb: 14, 165, 233;             /* #0EA5E9 Sky Blue */
+  --cyan-rgb: 20, 184, 166;            /* #14B8A6 Cyan */
+  --accent-rgb: 22, 163, 74;           /* Primary Accent: Emerald Green */
+  --accent-glow-rgb: 22, 163, 74;
+
+  /* Status Tokens */
+  --clean-rgb: 34, 197, 94;            /* #22C55E Success */
+  --success-rgb: 34, 197, 94;          /* #22C55E */
+  --moderate-rgb: 245, 158, 11;        /* #F59E0B Warning */
+  --high-rgb: 239, 68, 68;             /* #EF4444 Error */
+  --info-rgb: 59, 130, 246;            /* #3B82F6 Info */
+
+  /* Chart Specific Tokens */
+  --chart-carbon: #16A34A;
+  --chart-energy: #F59E0B;
+  --chart-network: #0EA5E9;
+  --chart-storage: #06B6D4;
+  --chart-cost: #8B5CF6;
+  --chart-error: #EF4444;
+
+  /* Overlay & Glass Shadows */
+  --overlay-bg: rgba(2, 6, 23, 0.85);
+  --shadow-sm: 0 4px 12px rgba(2, 6, 23, 0.4);
+  --shadow-md: 0 12px 40px rgba(2, 6, 23, 0.6);
+  --shadow-lg: 0 24px 80px rgba(2, 6, 23, 0.8);
+  --shadow-glass: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  /* Computed CSS Variables */
+  --bg: rgb(var(--bg-rgb));
+  --panel: rgba(var(--panel-rgb), 0.95);
+  --panel-solid: rgb(var(--panel-solid-rgb));
+  --elevated: rgb(var(--elevated-rgb));
+  --elevated-hover: rgb(var(--elevated-hover-rgb));
+
+  --border: rgba(51, 65, 85, 0.9);
+  --border-soft: rgba(30, 41, 59, 0.9);
+  --border-glow: rgba(var(--border-glow-rgb), 0.4);
+
+  --text: rgb(var(--text-rgb));
+  --text-primary: rgb(var(--text-rgb));
+  --text-secondary: rgb(var(--text-muted-rgb));
+  --text-muted: rgb(var(--text-muted-rgb));
+  --text-faint: rgb(var(--text-faint-rgb));
+  --text-tertiary: rgb(var(--text-faint-rgb));
+  --text-inverse: rgb(var(--text-inverse-rgb));
+
+  --clean: rgb(var(--clean-rgb));
+  --clean-glow: rgba(var(--clean-rgb), 0.15);
+  --success: rgb(var(--success-rgb));
+  --success-glow: rgba(var(--success-rgb), 0.15);
+
+  --moderate: rgb(var(--moderate-rgb));
+  --moderate-glow: rgba(var(--moderate-rgb), 0.15);
+  --high: rgb(var(--high-rgb));
+  --high-glow: rgba(var(--high-rgb), 0.15);
+
+  --accent: rgb(var(--accent-rgb));
+  --accent-glow: rgba(var(--accent-rgb), 0.2);
+
+  /* Typography Specifications */
+  --font-display: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Design System Radii */
+  --radius-card: 24px;
+  --radius-button: 16px;
+  --radius-input: 14px;
+  --radius-modal: 28px;
+}
+
+[data-theme="light"] {
+  /* Surface Elevation System (Light Mode) */
+  --bg-rgb: 248, 250, 252;             /* #F8FAFC Light Gray Background */
+  --panel-solid-rgb: 255, 255, 255;    /* #FFFFFF Card Surface */
+  --panel-rgb: 255, 255, 255;
+  --elevated-rgb: 241, 245, 249;        /* #F1F5F9 Section / Surface */
+  --elevated-hover-rgb: 226, 232, 240;  /* #E2E8F0 Surface Hover */
+
+  /* Navigation & Chrome */
+  --sidebar-rgb: 255, 255, 255;        /* #FFFFFF */
+  --navbar-rgb: 255, 255, 255;         /* #FFFFFF */
+  --modal-rgb: 255, 255, 255;          /* #FFFFFF */
+  --dropdown-rgb: 255, 255, 255;       /* #FFFFFF */
+
+  /* Crisp Border Gray */
+  --border-rgb: 226, 232, 240;         /* #E2E8F0 Border */
+  --border-soft-rgb: 241, 245, 249;    /* #F1F5F9 Divider */
+  --border-glow-rgb: 22, 163, 74;
+
+  /* Typography Colors (Light Mode) */
+  --text-rgb: 15, 23, 42;              /* #0F172A Primary Text */
+  --text-muted-rgb: 51, 65, 85;        /* #334155 Secondary Text */
+  --text-faint-rgb: 100, 116, 139;     /* #64748B Muted Text */
+  --text-inverse-rgb: 255, 255, 255;    /* Contrast Text */
+
+  /* Brand Primary Identity */
+  --accent-rgb: 22, 163, 74;           /* #16A34A Emerald Green Primary */
+  --accent-glow-rgb: 22, 163, 74;
+
+  /* Semantic Status Tokens */
+  --clean-rgb: 34, 197, 94;            /* #22C55E */
+  --success-rgb: 34, 197, 94;
+  --moderate-rgb: 245, 158, 11;        /* #F59E0B */
+  --high-rgb: 239, 68, 68;             /* #EF4444 */
+  --info-rgb: 59, 130, 246;            /* #3B82F6 */
+
+  /* Shadows */
+  --overlay-bg: rgba(15, 23, 42, 0.45);
+  --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 12px 40px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 24px 80px rgba(15, 23, 42, 0.15);
+  --shadow-glass: 0 12px 40px rgba(15, 23, 42, 0.08);
+
+  /* Computed CSS Variables */
+  --bg: rgb(var(--bg-rgb));
+  --panel: rgba(var(--panel-rgb), 1);
+  --panel-solid: rgb(var(--panel-solid-rgb));
+  --elevated: rgb(var(--elevated-rgb));
+  --elevated-hover: rgb(var(--elevated-hover-rgb));
+
+  --border: rgba(226, 232, 240, 0.9);
+  --border-soft: rgba(241, 245, 249, 0.95);
+  --border-glow: rgba(var(--border-glow-rgb), 0.15);
+
+  --text: rgb(var(--text-rgb));
+  --text-primary: rgb(var(--text-rgb));
+  --text-secondary: rgb(var(--text-muted-rgb));
+  --text-muted: rgb(var(--text-muted-rgb));
+  --text-faint: rgb(var(--text-faint-rgb));
+  --text-tertiary: rgb(var(--text-faint-rgb));
+  --text-inverse: rgb(var(--text-inverse-rgb));
+
+  --clean: rgb(var(--clean-rgb));
+  --clean-glow: rgba(var(--clean-rgb), 0.12);
+  --success: rgb(var(--success-rgb));
+  --success-glow: rgba(var(--success-rgb), 0.12);
+
+  --moderate: rgb(var(--moderate-rgb));
+  --moderate-glow: rgba(var(--moderate-rgb), 0.12);
+  --high: rgb(var(--high-rgb));
+  --high-glow: rgba(var(--high-rgb), 0.12);
+
+  --accent: rgb(var(--accent-rgb));
+  --accent-glow: rgba(var(--accent-rgb), 0.12);
+}

@@ -1,0 +1,1 @@
+export { RecoCard } from "./RecoCard";

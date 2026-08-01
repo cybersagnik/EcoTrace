@@ -1,0 +1,72 @@
+/* Keyframe Animations & Scale Utilities */
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.97); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float-ambient {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+
+@keyframes drift-particle {
+  0% { transform: translateY(0px) translateX(0px) rotate(0deg); opacity: 0.2; }
+  50% { transform: translateY(-25px) translateX(12px) rotate(15deg); opacity: 0.4; }
+  100% { transform: translateY(0px) translateX(0px) rotate(0deg); opacity: 0.2; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: float-ambient 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-ambient 9s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-ambient 8s ease-in-out 2s infinite;
+}
+
+.animate-drift-1 {
+  animation: drift-particle 12s ease-in-out infinite;
+}
+
+.animate-drift-2 {
+  animation: drift-particle 16s ease-in-out 3s infinite;
+}
+
+.animate-drift-3 {
+  animation: drift-particle 14s ease-in-out 1.5s infinite;
+}
