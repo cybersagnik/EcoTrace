@@ -21,7 +21,22 @@ app.get('/health', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-  const { bootstrap_token, public_key, device_class = 'linux', hostname, os } = req.body;
+  const {
+    bootstrap_token,
+    public_key,
+    device_class = 'linux',
+    hostname,
+    os,
+    // Notification consent — the agent opts in at registration time.
+    // Default: no consent (dashboard cannot send notifications).
+    notification_consent = false,
+    notification_channel = null,
+    notification_poll_interval_s = 30,
+    // Per-device power model. Defaults keep every existing deployment sane;
+    // a server can override with real rated TDP + idle draw at registration.
+    rated_tdp_w = null,
+    base_power_w = null,
+  } = req.body;
 
   if (!bootstrap_token || bootstrap_token !== BOOTSTRAP_TOKEN) {
     return res.status(401).json({ error: 'invalid or missing bootstrap_token' });
@@ -33,19 +48,31 @@ app.post('/register', async (req, res) => {
   }
 
   const device_id = `${device_class}-${uuidv4().slice(0, 8)}`;
+  const consent = Boolean(notification_consent);
+
+  // Device-class-aware power defaults (watts).
+  const tdpDefault = device_class === 'windows' ? 35 : 45;
+  const baseDefault = device_class === 'windows' ? 12 : 10;
+  const tdp = Math.min(1000, Math.max(5, parseInt(rated_tdp_w, 10) || tdpDefault));
+  const base = Math.min(200, Math.max(1, parseInt(base_power_w, 10) || baseDefault));
 
   try {
     await pool.query(
-      `INSERT INTO devices (device_id, device_class, os, hostname, status)
-       VALUES ($1, $2, $3, $4, 'active')
+      `INSERT INTO devices (device_id, device_class, os, hostname, status,
+                            notification_consent, notification_channel, notification_poll_interval_s,
+                            rated_tdp_w, base_power_w)
+       VALUES ($1, $2, $3, $4, 'active', $5, $6, $7, $8, $9)
        ON CONFLICT (device_id) DO NOTHING`,
-      [device_id, device_class, os, hostname]
+      [device_id, device_class, os, hostname, consent,
+       notification_channel || null,
+       Math.max(5, parseInt(notification_poll_interval_s, 10) || 30),
+       tdp, base]
     );
 
     await pool.query(
       `INSERT INTO audit_log (event_type, device_id, metadata)
        VALUES ('device.registered', $1, $2)`,
-      [device_id, JSON.stringify({ device_class, os, hostname })]
+      [device_id, JSON.stringify({ device_class, os, hostname, notification_consent: consent, rated_tdp_w: tdp, base_power_w: base })]
     );
   } catch (err) {
     console.error('[registration] DB error:', err.message);

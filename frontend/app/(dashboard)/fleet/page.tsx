@@ -1,146 +1,255 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useFleet } from "@/hooks/useFleet";
 import { LoadingState } from "@/components/shared/LoadingState";
-import { StatusBadge } from "@/components/dashboard/DeviceStatus";
-import { formatCarbonKg, formatPct } from "@/utils/formatter";
+import { ErrorState } from "@/components/shared/ErrorState";
+import { useFleets } from "@/hooks/useFleets";
+import { useFleet } from "@/hooks/useFleet";
+import { formatCarbonKg } from "@/utils/formatter";
 import {
   Server,
   Globe,
   Zap,
   Activity,
-  SlidersHorizontal,
+  Plus,
   X,
   Check,
+  Trash2,
   ShieldCheck,
-  CheckCircle2,
+  ArrowRight,
+  AlertTriangle,
 } from "lucide-react";
-import { FleetRegion } from "@/types/fleet";
-
-const DEFAULT_REGIONS: FleetRegion[] = [
-  { region: "US-EAST (N. Virginia)", carbon_kg: 5.2, active_devices: 2 },
-  { region: "EU-WEST (Frankfurt)", carbon_kg: 4.1, active_devices: 1 },
-  { region: "AP-SOUTH (Mumbai)", carbon_kg: 3.1, active_devices: 1 },
-];
+import { Fleet } from "@/types/fleet";
 
 export default function FleetPage() {
-  const { fleet, loading, refetch } = useFleet();
-  const [selectedRegion, setSelectedRegion] = useState<FleetRegion | null>(null);
-
-  // Modal Settings State
-  const [pueTarget, setPueTarget] = useState(1.15);
-  const [autoRouting, setAutoRouting] = useState(true);
+  const { fleets, loading, error, refetch, create, remove } = useFleets();
+  const { fleet: aggregate } = useFleet();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Fleet | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  if (loading || !fleet) {
-    return <LoadingState label="Loading fleet cluster metrics..." />;
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    grid_region: "",
+    grid_intensity_g_per_kwh: 240,
+  });
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  if (loading || !fleets) {
+    return <LoadingState label="Loading fleet registry..." />;
+  }
+  if (error) {
+    return <ErrorState message={error} onRetry={refetch} />;
   }
 
-  const regionsList = fleet.regions ?? DEFAULT_REGIONS;
-
-  const handleSaveClusterSettings = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRegion) return;
+    setFormError(null);
+    if (form.name.trim().length < 2) {
+      setFormError("Fleet name must be at least 2 characters");
+      return;
+    }
+    if (form.grid_region.trim().length < 2) {
+      setFormError("Grid region is required");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const fleet = await create({
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        grid_region: form.grid_region.trim(),
+        grid_intensity_g_per_kwh: form.grid_intensity_g_per_kwh,
+      });
+      setIsCreateOpen(false);
+      setForm({ name: "", description: "", grid_region: "", grid_intensity_g_per_kwh: 240 });
+      showToast(`Fleet "${fleet.name}" created`);
+    } catch (err) {
+      setFormError((err as Error).message ?? "Failed to create fleet");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    setToastMsg(`Cluster parameters for ${selectedRegion.region} saved!`);
-    setTimeout(() => setToastMsg(null), 3500);
-    setSelectedRegion(null);
-    refetch();
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await remove(deleteTarget.id);
+      showToast(`Fleet "${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast(`Delete failed: ${(err as Error).message}`);
+      setDeleteTarget(null);
+    }
   };
 
   return (
     <div className="space-y-8 animate-fade-in relative">
-      {/* Toast Notification Banner */}
+      {/* Toast */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-panel-solid p-4 shadow-glass backdrop-blur-glass text-emerald-400 font-mono text-xs animate-bounce">
-          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded border border-accent/30 bg-panel p-4 text-accent font-mono text-xs">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-accent" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* Cluster Management Modal Dialog */}
-      {selectedRegion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 dark:bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-          <div className="w-[92vw] max-w-md max-h-[85vh] overflow-y-auto rounded-[28px] border border-border/80 bg-[#0F172A] dark:bg-[#0F172A] bg-white p-5 sm:p-6 shadow-2xl space-y-5 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-border/50 pb-3">
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-4 animate-fade-in">
+          <div className="w-[92vw] max-w-md rounded border border-high/40 bg-panel p-6 space-y-5 animate-scale-in">
+            <div className="flex items-center gap-2 text-high border-b border-border pb-3">
+              <Trash2 className="h-5 w-5" />
+              <h3 className="font-display text-base font-bold text-text">
+                Delete Fleet
+              </h3>
+            </div>
+            <div className="space-y-3 font-mono text-xs">
+              <p className="text-text font-semibold">
+                Permanently delete <span className="text-high">{deleteTarget.name}</span>?
+              </p>
+              {deleteTarget.total_devices > 0 ? (
+                <div className="rounded bg-high/10 border border-high/20 p-3 text-high font-semibold">
+                  Cannot delete: {deleteTarget.total_devices} device(s) still assigned.
+                  Unassign them first.
+                </div>
+              ) : (
+                <div className="rounded bg-amber/10 border border-amber/20 p-3 text-amber font-semibold">
+                  This action cannot be undone.
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 pt-3 border-t border-border font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="rounded border border-border px-4 py-2 font-semibold text-text-muted hover:text-text cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteTarget.total_devices > 0}
+                className="flex items-center gap-2 rounded bg-high px-4 py-2 font-semibold text-white hover:bg-high transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Fleet modal */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-4 animate-fade-in">
+          <div className="w-[92vw] max-w-md max-h-[85vh] overflow-y-auto rounded border border-border bg-panel p-6 space-y-5 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <SlidersHorizontal className="h-5 w-5 text-accent" />
-                <h3 className="font-display text-base font-bold text-text dark:text-white text-slate-900">
-                  Configure {selectedRegion.region}
+                <Plus className="h-5 w-5 text-accent" />
+                <h3 className="font-display text-base font-bold text-text">
+                  Create New Fleet
                 </h3>
               </div>
               <button
-                onClick={() => setSelectedRegion(null)}
+                onClick={() => setIsCreateOpen(false)}
                 className="text-text-faint hover:text-text p-1 rounded cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-
-            <form onSubmit={handleSaveClusterSettings} className="space-y-4 font-mono text-xs">
+            <form onSubmit={handleCreate} className="space-y-4 font-mono text-xs">
               <div>
-                <label className="block text-text-muted dark:text-slate-300 text-slate-700 mb-1.5 font-semibold">Region Name</label>
+                <label className="block text-text-muted mb-1.5 font-semibold">
+                  Fleet Name
+                </label>
                 <input
                   type="text"
-                  disabled
-                  value={selectedRegion.region}
-                  className="w-full rounded-lg border border-border/60 bg-bg/50 px-3 py-2 text-text-muted cursor-not-allowed"
+                  required
+                  placeholder="e.g. IND-TCS"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full rounded border border-border bg-elevated/40 px-3 py-2 text-text placeholder-text-faint focus:border-accent focus:outline-none"
                 />
               </div>
-
               <div>
-                <label className="block text-text-muted dark:text-slate-300 text-slate-700 mb-1.5 font-semibold">
-                  PUE Efficiency Target
+                <label className="block text-text-muted mb-1.5 font-semibold">
+                  Description (optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Mumbai DC — production cluster"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full rounded border border-border bg-elevated/40 px-3 py-2 text-text placeholder-text-faint focus:border-accent focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-text-muted mb-1.5 font-semibold">
+                  Grid Region Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. IN-MH, US-CAL, EU-DE"
+                  value={form.grid_region}
+                  onChange={(e) => setForm({ ...form, grid_region: e.target.value })}
+                  className="w-full rounded border border-border bg-elevated/40 px-3 py-2 text-text placeholder-text-faint focus:border-accent focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] text-text-faint">
+                  ISO-style region code (e.g. IN-MH, US-CAL, EU-DE)
+                </p>
+              </div>
+              <div>
+                <label className="block text-text-muted mb-1.5 font-semibold">
+                  Grid Intensity (gCO2e/kWh)
                 </label>
                 <input
                   type="number"
-                  step="0.01"
-                  min="1.0"
-                  max="2.0"
-                  value={pueTarget}
-                  onChange={(e) => setPueTarget(parseFloat(e.target.value))}
-                  className="w-full rounded-lg border border-border/80 bg-[#0b0f17] dark:bg-[#0b0f17] bg-slate-50 px-3 py-2 text-text dark:text-white text-slate-900 focus:border-accent focus:outline-none shadow-inner"
+                  required
+                  min="1"
+                  step="1"
+                  value={form.grid_intensity_g_per_kwh}
+                  onChange={(e) =>
+                    setForm({ ...form, grid_intensity_g_per_kwh: parseFloat(e.target.value) || 0 })
+                  }
+                  className="w-full rounded border border-border bg-elevated/40 px-3 py-2 text-text focus:border-accent focus:outline-none"
                 />
+                <p className="mt-1 text-[10px] text-text-faint">
+                  Reference: EU ≈ 240, US-CAL ≈ 240, IN ≈ 720, CN ≈ 580
+                </p>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-border/80 bg-bg/60 p-3">
-                <div>
-                  <span className="font-semibold text-text block">Green Auto-Routing</span>
-                  <span className="text-[11px] text-text-faint">
-                    Shift workloads when carbon spikes
-                  </span>
+              {formError && (
+                <div className="rounded bg-high/10 border border-high/20 p-3 text-high font-semibold">
+                  {formError}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setAutoRouting(!autoRouting)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    autoRouting ? "bg-accent" : "bg-border"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-bg shadow transition duration-200 ease-in-out ${
-                      autoRouting ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
+              )}
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-border/40">
+              <div className="flex justify-end gap-3 pt-3 border-t border-border">
                 <button
                   type="button"
-                  onClick={() => setSelectedRegion(null)}
-                  className="rounded-xl border border-border px-4 py-2 font-semibold text-text-muted hover:text-text cursor-pointer"
+                  onClick={() => setIsCreateOpen(false)}
+                  className="rounded border border-border px-4 py-2 font-semibold text-text-muted hover:text-text cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 font-semibold text-bg hover:bg-sky-400 transition-all shadow-glow cursor-pointer"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 rounded bg-accent px-4 py-2 font-semibold text-bg hover:bg-accent-hover transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Check className="h-4 w-4" />
-                  <span>Apply Parameters</span>
+                  <span>{isSubmitting ? "Creating..." : "Create Fleet"}</span>
                 </button>
               </div>
             </form>
@@ -149,105 +258,186 @@ export default function FleetPage() {
       )}
 
       <PageHeader
-        title="Multi-Region Fleet Clusters"
-        subtitle="Regional data center carbon attribution, power usage effectiveness (PUE), and grid intensity routing."
-        badge={`${regionsList.length} Active Regions`}
+        title="Fleet Registry"
+        subtitle="User-managed logical groupings of devices. Create a fleet and assign any device category to it."
+        badge={`${fleets.length} Fleet${fleets.length === 1 ? "" : "s"}`}
+        action={
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 rounded bg-accent px-4 py-2.5 font-mono text-xs font-semibold text-white hover:bg-accent-hover transition-colors cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create Fleet</span>
+          </button>
+        }
       />
 
-      {/* Fleet Overview Stats Banner */}
+      {/* Aggregate stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-card border border-border bg-panel-solid dark:bg-[#111b24] bg-white p-5 shadow-level-1">
+        <div className="rounded-card border border-border bg-panel p-5">
           <div className="flex items-center justify-between text-text-muted mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
-              Active Regional Nodes
+              Active Devices
             </span>
-            <Server className="h-4 w-4 text-emerald-400" />
+            <Server className="h-4 w-4 text-success" />
           </div>
           <div className="font-mono text-2xl font-bold text-text">
-            {fleet.summary.active_devices} Total
-          </div>
-          <div className="mt-1 text-xs text-emerald-400 font-mono flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>100% telemetry sync rate</span>
-          </div>
-        </div>
-
-        <div className="rounded-card border border-border bg-panel-solid dark:bg-[#111b24] bg-white p-5 shadow-level-1">
-          <div className="flex items-center justify-between text-text-muted mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
-              Aggregate Fleet Carbon
-            </span>
-            <Activity className="h-4 w-4 text-sky-400" />
-          </div>
-          <div className="font-mono text-2xl font-bold text-text">
-            {formatCarbonKg(fleet.summary.total_carbon_kg)}
+            {aggregate?.summary.active_devices ?? 0}
           </div>
           <div className="mt-1 text-xs text-text-muted font-mono">
-            {formatPct(fleet.summary.delta_pct_vs_yesterday)} vs 24h baseline
+            across {fleets.length} fleet{fleets.length === 1 ? "" : "s"}
           </div>
         </div>
 
-        <div className="rounded-card border border-border bg-panel-solid dark:bg-[#111b24] bg-white p-5 shadow-level-1">
+        <div className="rounded-card border border-border bg-panel p-5">
           <div className="flex items-center justify-between text-text-muted mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
-              Primary Grid Zone
+              Total Carbon Today
             </span>
-            <Zap className="h-4 w-4 text-amber-400" />
+            <Activity className="h-4 w-4 text-blue" />
           </div>
           <div className="font-mono text-2xl font-bold text-text">
-            {fleet.summary.grid_region}
+            {aggregate ? formatCarbonKg(aggregate.summary.total_carbon_kg) : "—"}
           </div>
-          <div className="mt-1 text-xs text-amber-400 font-mono">
-            240 gCO2e/kWh avg intensity
+          <div className="mt-1 text-xs text-text-muted font-mono">
+            aggregate across all fleets
+          </div>
+        </div>
+
+        <div className="rounded-card border border-border bg-panel p-5">
+          <div className="flex items-center justify-between text-text-muted mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
+              Primary Grid Mix
+            </span>
+            <Zap className="h-4 w-4 text-amber" />
+          </div>
+          <div className="font-mono text-2xl font-bold text-text">
+            {aggregate?.summary.grid_region ?? "—"}
+          </div>
+          <div className="mt-1 text-xs text-text-muted font-mono">
+            {aggregate?.summary.grid_region === "Mixed"
+              ? "Multiple regions in use"
+              : "fleet-aware"}
           </div>
         </div>
       </div>
 
-      {/* Regional Cluster Cards Grid */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {regionsList.map((r) => (
-          <div
-            key={r.region}
-            className="rounded-card border border-border bg-panel-solid dark:bg-[#111b24] bg-white p-6 shadow-level-1 hover:border-accent/40 transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-accent" />
-                  <span className="font-mono text-base font-bold text-text">{r.region}</span>
-                </div>
-                <StatusBadge status="operating" />
-              </div>
-
-              <div className="space-y-3 font-mono text-xs bg-bg/60 p-4 rounded-xl mb-4">
-                <div className="flex justify-between">
-                  <span className="text-text-faint">Carbon Output:</span>
-                  <span className="font-bold text-text">{formatCarbonKg(r.carbon_kg)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-faint">Active Nodes:</span>
-                  <span className="font-bold text-text">{r.active_devices} nodes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-faint">PUE Rating:</span>
-                  <span className="font-bold text-emerald-400">1.18 Efficient</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-border/40 pt-3 font-mono text-xs">
-              <span className="text-text-faint">Auto-Routing: Active</span>
-              <button
-                onClick={() => setSelectedRegion(r)}
-                className="flex items-center gap-1 text-accent hover:underline font-semibold cursor-pointer"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span>Configure Cluster</span>
-              </button>
-            </div>
+      {/* Fleet list */}
+      {fleets.length === 0 ? (
+        <div className="rounded border-2 border-dashed border-border bg-panel p-10 text-center space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded bg-elevated text-text-faint">
+            <Globe className="h-7 w-7" />
           </div>
-        ))}
-      </div>
+          <div className="space-y-1">
+            <h3 className="font-display text-lg font-bold text-text">No fleets configured yet</h3>
+            <p className="text-xs text-text-muted">
+              Create your first fleet (e.g. <span className="font-mono">IND-TCS</span>) to start
+              grouping devices. Until you do, every device stays unassigned.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="inline-flex items-center gap-2 rounded bg-accent px-4 py-2 font-mono text-xs font-semibold text-bg hover:bg-accent-hover transition-colors cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create First Fleet</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {fleets.map((f) => (
+            <div
+              key={f.id}
+              className="rounded-card border border-border bg-panel p-6 hover:border-accent/40 transition-colors flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Globe className="h-4 w-4 text-accent shrink-0" />
+                    <span className="font-mono text-base font-bold text-text truncate" title={f.name}>
+                      {f.name}
+                    </span>
+                  </div>
+                  <span
+                    className={`rounded px-2 py-0.5 font-mono text-[10px] font-semibold ${
+                      f.active_devices > 0
+                        ? "bg-accent/10 text-accent border border-accent/30"
+                        : "bg-elevated text-text-faint border border-border"
+                    }`}
+                  >
+                    {f.active_devices > 0 ? `${f.active_devices} live` : "idle"}
+                  </span>
+                </div>
+
+                {f.description && (
+                  <p className="text-xs text-text-muted mb-3 line-clamp-2">{f.description}</p>
+                )}
+
+                <div className="space-y-2 font-mono text-xs bg-bg/60 p-3 rounded mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-text-faint">Grid Region:</span>
+                    <span className="font-bold text-text">{f.grid_region}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-faint">Intensity:</span>
+                    <span className="font-bold text-amber">
+                      {f.grid_intensity_g_per_kwh.toFixed(0)} gCO2e/kWh
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-faint">Devices:</span>
+                    <span className="font-bold text-text">
+                      {f.active_devices} / {f.total_devices}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-faint">Carbon Today:</span>
+                    <span className="font-bold text-text">
+                      {formatCarbonKg(f.carbon_g_today / 1000)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-border pt-3 font-mono text-xs">
+                <button
+                  onClick={() => setDeleteTarget(f)}
+                  disabled={f.total_devices > 0}
+                  className="flex items-center gap-1 text-high hover:text-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title={f.total_devices > 0 ? "Unassign devices first" : "Delete fleet"}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+                <Link
+                  href={`/fleet/${f.id}`}
+                  className="flex items-center gap-1 text-accent hover:underline font-semibold cursor-pointer"
+                >
+                  <span>Manage Devices</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Unassigned devices banner */}
+      {fleets.length > 0 && (
+        <div className="rounded border border-amber/30 bg-amber/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-mono text-xs font-semibold text-amber">
+              Devices not assigned to any fleet are aggregated under &quot;Unassigned&quot;
+            </p>
+            <p className="text-[11px] text-text-muted">
+              Open any device from <Link href="/devices/endpoints" className="text-accent hover:underline font-semibold">Devices → Endpoints</Link> to
+              assign it to a fleet, or visit <Link href="/fleet" className="text-accent hover:underline font-semibold">Fleet Registry</Link> to
+              create a new one.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

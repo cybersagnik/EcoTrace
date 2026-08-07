@@ -33,7 +33,23 @@ message TelemetryEnvelope {
   float  load_average_1m   = 30;
   int32  process_count     = 31;
 
+  // ── Process / workload telemetry ─────────────
+  // Per-process samples used for workload & service carbon attribution.
+  // Populated by Tier 1 agents; empty on constrained Tier 2 devices.
+  repeated ProcessSample processes = 50;
+
   // ── IoT extensions (Tier 2) ─────────────────
   float  battery_voltage   = 40;
   float  sensor_value      = 41;
+}
+
+// A single process observation within the collection window.
+// cpu_percent is the machine-wide share (0.0–100.0) consumed by this
+// process over the window — the sum across processes ≈ envelope.cpu_usage.
+message ProcessSample {
+  int32  pid          = 1;
+  string name         = 2;  // executable / process name
+  string service      = 3;  // mapped workload (systemd unit, service name, container)
+  float  cpu_percent  = 4;  // machine-wide CPU % over the window
+  int64  rss_bytes    = 5;  // resident set size at sample time
 }

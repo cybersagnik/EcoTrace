@@ -38,7 +38,12 @@ func NewEnvelopeBuilder(creds Credentials, deviceClass string) *EnvelopeBuilder 
 // SECURITY: invalid envelopes are rejected here — before buffering or sending.
 func (b *EnvelopeBuilder) Build(metrics []Metric, window TimeRange) (*schema.TelemetryEnvelope, error) {
 	metricMap := make(map[string]float64)
+	processes := make([]*schema.ProcessSample, 0, 32)
 	for _, m := range metrics {
+		if m.Process != nil {
+			processes = append(processes, m.Process)
+			continue
+		}
 		metricMap[m.Name] = m.Value
 	}
 
@@ -77,5 +82,8 @@ func (b *EnvelopeBuilder) Build(metrics []Metric, window TimeRange) (*schema.Tel
 		MemoryUsage:      float32(metricMap["memory_usage"]),
 		NetworkSent:      int64(metricMap["network_sent"]),
 		NetworkReceived:  int64(metricMap["network_received"]),
+		LoadAverage_1M:   float32(metricMap["load_average_1m"]),
+		ProcessCount:     int32(metricMap["process_count"]),
+		Processes:        processes,
 	}, nil
 }

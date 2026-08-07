@@ -83,14 +83,14 @@ export default function DashboardPage() {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-2 rounded-xl border border-border bg-elevated/70 px-3.5 py-2 font-mono text-xs font-medium text-text hover:border-accent/40 hover:text-accent transition-all active:scale-95 cursor-pointer shadow-level-1 disabled:opacity-50"
+              className="flex items-center gap-2 rounded border border-border bg-elevated/70 px-3.5 py-2 font-mono text-xs font-medium text-text hover:border-accent/40 hover:text-accent transition-colors cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`h-3.5 w-3.5 text-text-muted ${isRefreshing ? "animate-spin text-accent" : ""}`} />
               <span>{isRefreshing ? "Refreshing..." : "Refresh Telemetry (30s Polling)"}</span>
             </button>
             <button
               onClick={handleExportSummary}
-              className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 font-mono text-xs font-semibold text-bg hover:bg-sky-400 transition-all shadow-glow active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 rounded bg-accent px-4 py-2 font-mono text-xs font-semibold text-bg hover:bg-accent-hover transition-colors cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               <span>Export Executive Summary</span>

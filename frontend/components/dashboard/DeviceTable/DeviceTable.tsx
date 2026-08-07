@@ -54,15 +54,15 @@ export function DeviceTable({
   });
 
   return (
-    <section className="eco-card mb-8 rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white shadow-sm overflow-hidden transition-all duration-300">
+    <section className="eco-card mb-8 overflow-hidden">
       {/* Table Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-6 border-b border-border/40">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-border">
         <div className="flex items-center gap-2">
-          <Cpu className="h-4 w-4 text-[#16A34A]" />
-          <h2 className="font-display text-base font-bold text-text">
+          <Cpu className="h-3.5 w-3.5 text-accent" />
+          <h2 className="font-display text-base font-semibold text-text">
             Active Telemetry Sensors
           </h2>
-          <span className="rounded-full bg-elevated px-2.5 py-0.5 font-mono text-xs text-text-muted">
+          <span className="rounded bg-border px-2 py-0.5 font-mono text-xs text-text-muted tabular-nums">
             {filteredDevices.length} nodes online
           </span>
         </div>
@@ -76,19 +76,19 @@ export function DeviceTable({
               placeholder="Search by device ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input-eco w-60 rounded-[14px] border border-border bg-elevated/50 pl-8 pr-3 py-1.5 font-mono text-xs text-text placeholder-text-faint focus:border-[#16A34A] focus:outline-none"
+              className="input-eco w-60 pl-8 pr-3 py-1.5 font-mono text-xs"
             />
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center rounded-xl border border-border bg-bg/80 p-1 shadow-level-1">
+          <div className="flex items-center rounded border border-border bg-bg/80 p-1">
             {["all", "operating", "registering", "offline"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium capitalize transition-all cursor-pointer ${
+                className={`rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors cursor-pointer ${
                   statusFilter === status
-                    ? "bg-accent/20 text-accent font-semibold shadow-sm"
+                    ? "bg-elevated text-text font-semibold"
                     : "text-text-muted hover:text-text"
                 }`}
               >
@@ -102,16 +102,16 @@ export function DeviceTable({
       {/* Table View */}
       <div className="overflow-x-auto min-w-full">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-border/40 bg-elevated/40 font-mono text-text-faint uppercase tracking-wider text-[11px]">
+          <thead className="border-b border-border bg-transparent font-mono text-text-muted uppercase tracking-[0.08em] text-[11px]">
             <tr>
-              <th className="px-5 py-3.5 font-semibold">Device ID</th>
-              <th className="px-5 py-3.5 font-semibold">OS</th>
-              <th className="px-5 py-3.5 font-semibold">Carbon Today</th>
-              <th className="px-5 py-3.5 font-semibold">Status</th>
-              <th className="px-5 py-3.5 text-right font-semibold">Actions</th>
+              <th className="px-5 py-3 font-semibold">Device ID</th>
+              <th className="px-5 py-3 font-semibold">OS</th>
+              <th className="px-5 py-3 font-semibold">Carbon Today</th>
+              <th className="px-5 py-3 font-semibold">Status</th>
+              <th className="px-5 py-3 text-right font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/40 font-mono">
+          <tbody className="divide-y divide-border font-mono">
             {filteredDevices.map((d) => {
               const isSelected = selectedDeviceId === d.device_id;
               const isHighest = highestEmitter && highestEmitter.device_id === d.device_id;
@@ -121,30 +121,28 @@ export function DeviceTable({
                 intensityGrade === "clean"
                   ? "text-success font-semibold"
                   : intensityGrade === "moderate"
-                  ? "text-amber-400"
-                  : "text-rose-400 font-extrabold";
+                  ? "text-moderate"
+                  : "text-high font-extrabold";
 
               return (
                 <tr
                   key={d.device_id}
                   onClick={() => onSelectDevice?.(d.device_id)}
                   className={`group transition-colors duration-150 cursor-pointer ${
-                    isHighest
-                      ? "bg-rose-500/10 border-l-4 border-l-rose-500 hover:bg-rose-500/15"
-                      : isSelected
-                      ? "bg-accent/10 border-l-2 border-l-accent"
+                    isSelected
+                      ? "bg-elevated/50"
                       : "hover:bg-elevated/40"
                   }`}
                 >
                   <td className="px-5 py-3.5 font-semibold text-text flex items-center gap-2">
                     {d.status === "registering" ? (
-                      <span className="h-2 w-2 rounded-full bg-success animate-pulse shrink-0" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-moderate shrink-0" />
                     ) : (
-                      <Server className="h-3.5 w-3.5 text-accent opacity-75 shrink-0" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-success shrink-0" />
                     )}
                     <span>{d.device_id}</span>
                     {isHighest && (
-                      <span className="inline-flex items-center gap-1 rounded bg-rose-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-rose-400 border border-rose-500/30 animate-pulse">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-high">
                         <Flame className="h-3 w-3" />
                         Highest Emitter
                       </span>
@@ -158,7 +156,7 @@ export function DeviceTable({
                       )}
                     </div>
                   </td>
-                  <td className={`px-5 py-3.5 font-bold ${carbonColorClass}`}>
+                  <td className={`px-5 py-3.5 font-bold tabular-nums ${carbonColorClass}`}>
                     {formatCarbonG(d.carbon_g)}
                   </td>
                   <td className="px-5 py-3.5">
@@ -171,7 +169,7 @@ export function DeviceTable({
                         e.stopPropagation();
                         onSelectDevice?.(d.device_id);
                       }}
-                      className="rounded-lg px-2.5 py-1 text-xs text-accent hover:bg-accent/15 transition-all font-semibold active:scale-95 cursor-pointer"
+                      className="rounded px-2.5 py-1 text-xs text-accent hover:bg-accent/10 transition-colors font-semibold cursor-pointer"
                     >
                       <Activity className="h-3.5 w-3.5 inline mr-1" />
                       History

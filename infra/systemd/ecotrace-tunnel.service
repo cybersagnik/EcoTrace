@@ -1,0 +1,27 @@
+[Unit]
+Description=EcoTrace Cloudflare quick tunnel (HTTPS :443 → localhost:443)
+Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment="HOME=/home/sagnik"
+ExecStart=/usr/local/bin/cloudflared \
+  --no-autoupdate \
+  --metrics=127.0.0.1:20241 \
+  --logfile=/var/log/cloudflared-ecotrace.log \
+  tunnel --url https://localhost:443
+Restart=always
+RestartSec=10
+User=sagnik
+Group=sagnik
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

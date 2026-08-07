@@ -41,12 +41,27 @@ func (s *LinuxMetricSource) Collect(window core.TimeRange) ([]core.Metric, error
 	}
 
 	now := time.Now()
-	return []core.Metric{
+	metrics := []core.Metric{
 		{Name: "cpu_usage",        Value: cpu,     Timestamp: now},
 		{Name: "memory_usage",     Value: mem,     Timestamp: now},
 		{Name: "network_sent",     Value: float64(netSent), Timestamp: now},
 		{Name: "network_received", Value: float64(netRecv), Timestamp: now},
-	}, nil
+	}
+
+	// ── Workload telemetry (processes, load average) ────────────────
+	// Best-effort: a failure here must never fail the whole collection,
+	// since process sampling requires a second /proc pass.
+	if load, err := loadAverage1m(); err == nil {
+		metrics = append(metrics, core.Metric{Name: "load_average_1m", Value: load, Timestamp: now})
+	}
+	if procs, err := collectProcesses(window); err == nil {
+		metrics = append(metrics, procs...)
+	} else {
+		// process_count still reported as 0 is acceptable — telemetry continues
+		metrics = append(metrics, core.Metric{Name: "process_count", Value: 0, Timestamp: now})
+	}
+
+	return metrics, nil
 }
 
 // ── CPU ──────────────────────────────────────────────────────────────────────

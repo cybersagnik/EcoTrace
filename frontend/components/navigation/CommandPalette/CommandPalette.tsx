@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   Cpu,
   Server,
+  Radio,
+  Network,
   BarChart3,
   FileText,
   Bell,
@@ -24,7 +26,10 @@ interface CommandItem {
 
 const COMMAND_ITEMS: CommandItem[] = [
   { title: "Overview Dashboard", category: "Navigation", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Hardware & IoT Devices", category: "Navigation", href: "/devices", icon: Cpu },
+  { title: "Devices — Endpoints", category: "Navigation · Devices", href: "/devices/endpoints", icon: Server },
+  { title: "Devices — IoT Sensors", category: "Navigation · Devices", href: "/devices/iot", icon: Radio },
+  { title: "Devices — Fleets", category: "Navigation · Devices", href: "/devices/fleets", icon: Network },
+  { title: "Devices — PLC Controllers", category: "Navigation · Devices", href: "/devices/plc", icon: Cpu },
   { title: "Multi-Region Fleet Clusters", category: "Navigation", href: "/fleet", icon: Server },
   { title: "Carbon Analytics & Intensity", category: "Navigation", href: "/analytics", icon: BarChart3 },
   { title: "Sustainability Reports", category: "Navigation", href: "/reports", icon: FileText },
@@ -71,10 +76,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center theme-overlay backdrop-blur-sm p-4 pt-20">
-      <div className="w-full max-w-lg rounded-card border border-border bg-panel-solid p-4 shadow-glass space-y-3 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-start justify-center theme-overlay p-4 pt-20">
+      <div className="w-full max-w-lg rounded-card border border-border bg-panel p-4 space-y-3 animate-fade-in">
         {/* Search Input Box */}
-        <div className="relative flex items-center border-b border-border/60 pb-3">
+        <div className="relative flex items-center border-b border-border pb-3">
           <Search className="h-4 w-4 text-accent shrink-0 mr-3" />
           <input
             type="text"
@@ -98,7 +103,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 <button
                   key={item.href}
                   onClick={() => handleSelect(item.href)}
-                  className="w-full flex items-center justify-between rounded-lg p-2.5 text-left text-text-muted hover:bg-accent/15 hover:text-accent transition-all cursor-pointer"
+                  className="w-full flex items-center justify-between rounded p-2.5 text-left text-text-muted hover:bg-accent/15 hover:text-accent transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <Icon className="h-4 w-4 text-accent" />

@@ -2,70 +2,89 @@
 
 import { useState, useEffect } from "react";
 import { formatIndiaTime } from "@/utils/date";
-import { Activity, ShieldCheck, Radio } from "lucide-react";
+import { Activity, ShieldCheck, Radio, Loader2, AlertTriangle } from "lucide-react";
+import { getOverview, OverviewEvent } from "@/services/api/overview";
+
+const POLLING_INTERVAL_MS = 30000;
 
 export function LiveActivityStream() {
-  const [events, setEvents] = useState<Array<{ id: number; time: string; device: string; event: string; type: string }>>([]);
+  const [events, setEvents] = useState<OverviewEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const now = Date.now();
-    setEvents([
-      {
-        id: 1,
-        time: formatIndiaTime(new Date(now - 120000)),
-        device: "edge-us-east-01",
-        event: "Grid carbon intensity auto-matched via WattTime API",
-        type: "info",
-      },
-      {
-        id: 2,
-        time: formatIndiaTime(new Date(now - 300000)),
-        device: "datacenter-eu-west-04",
-        event: "Solar battery discharge initiated (saved 14.2kg CO2e)",
-        type: "success",
-      },
-      {
-        id: 3,
-        time: formatIndiaTime(new Date(now - 600000)),
-        device: "iot-gateway-ap-south",
-        event: "Telemetry payload heartbeat synced — 240gCO2/kWh",
-        type: "info",
-      },
-    ]);
+    let cancelled = false;
+    const fetchEvents = async () => {
+      try {
+        const res = await getOverview();
+        if (!cancelled) {
+          setEvents(res.events ?? []);
+          setError(null);
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message ?? String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchEvents();
+    const intervalId = setInterval(fetchEvents, POLLING_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
   }, []);
 
   return (
-    <section className="eco-card rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white p-6 shadow-sm transition-all duration-300">
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/50">
+    <section className="eco-card mb-8 p-6">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Radio className="h-4 w-4 text-emerald-400 animate-pulse" />
-          <h2 className="font-display text-base font-bold text-text">
+          <Radio className="h-3.5 w-3.5 text-accent" />
+          <h2 className="font-display text-base font-semibold text-text">
             Live Telemetry Event Log
           </h2>
         </div>
-        <div className="flex items-center gap-2 font-mono text-xs text-text-faint">
-          <span className="rounded bg-indigo-500/10 px-2 py-0.5 font-semibold text-indigo-400 border border-indigo-500/20">
+        <div className="flex items-center gap-2 font-mono text-xs text-text-muted">
+          <span className="rounded bg-border px-2 py-0.5 font-semibold text-text-muted border border-border">
             India Time (IST)
           </span>
+          {loading && events.length === 0 && (
+            <span className="flex items-center gap-1 text-text-muted">
+              <Loader2 className="h-3 w-3 animate-spin" /> syncing
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="space-y-3 font-mono text-xs">
-        {events.map((evt) => (
-          <div
-            key={evt.id}
-            className="flex items-start gap-3 rounded-lg border border-border/40 bg-bg/50 p-3 hover:border-accent/30 transition-all"
-          >
-            <span className="text-text-faint shrink-0">{evt.time}</span>
-            <span className="font-semibold text-accent shrink-0">{evt.device}</span>
-            <span className="text-text-muted flex-1">{evt.event}</span>
-            {evt.type === "success" ? (
-              <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
-            ) : (
-              <Activity className="h-4 w-4 text-sky-400 shrink-0" />
-            )}
+      <div className="space-y-2 font-mono text-xs">
+        {error ? (
+          <div className="flex items-center gap-2 rounded border border-border bg-bg/50 p-3 text-text-muted">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber" />
+            <span>Event stream unavailable: {error}</span>
           </div>
-        ))}
+        ) : events.length === 0 ? (
+          <div className="rounded border border-border bg-bg/50 p-4 text-center text-text-faint">
+            {loading ? "Waiting for first telemetry events…" : "No telemetry events in the last 2 hours."}
+          </div>
+        ) : (
+          events.map((evt) => (
+            <div
+              key={evt.id}
+              className="flex items-start gap-3 rounded border border-border bg-bg/50 p-3 hover:border-accent/40 transition-colors"
+            >
+              <span className="text-text-faint shrink-0">{formatIndiaTime(evt.time)}</span>
+              <span className="font-semibold text-accent shrink-0">{evt.device}</span>
+              <span className="text-text-muted flex-1">{evt.event}</span>
+              {evt.type === "success" ? (
+                <ShieldCheck className="h-3.5 w-3.5 text-success shrink-0" />
+              ) : evt.type === "warning" ? (
+                <AlertTriangle className="h-3.5 w-3.5 text-amber shrink-0" />
+              ) : (
+                <Activity className="h-3.5 w-3.5 text-blue shrink-0" />
+              )}
+            </div>
+          ))
+        )}
       </div>
     </section>
   );

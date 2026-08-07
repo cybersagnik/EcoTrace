@@ -1,22 +1,57 @@
 import { NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { SESSION_COOKIE_NAME } from "@/lib/auth";
+
+const API_BASE_URL = process.env.BACKEND_API_URL || "http://api:3003";
+
+async function proxyToBackend(
+  request: Request,
+  path: string,
+): Promise<NextResponse> {
+  const url = `${API_BASE_URL}${path}`;
+  const headers = new Headers(request.headers);
+  headers.delete("host");
+  headers.delete("content-length");
+
+  const cookieHeader = request.headers.get("cookie") || "";
+  if (cookieHeader.includes(`${SESSION_COOKIE_NAME}=`)) {
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`),
+    );
+    if (match) {
+      headers.set(
+        "Authorization",
+        `Bearer ${decodeURIComponent(match[1])}`,
+      );
+    }
+  }
+
+  const init: RequestInit = {
+    method: request.method,
+    headers,
+    cache: "no-store",
+  };
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    init.body = await request.text();
+  }
+
+  try {
+    const upstream = await fetch(url, init);
+    const body = await upstream.text();
+    return new NextResponse(body, {
+      status: upstream.status,
+      headers: {
+        "Content-Type":
+          upstream.headers.get("content-type") || "application/json",
+      },
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Backend unreachable", detail: String(err) },
+      { status: 502 },
+    );
+  }
+}
 
 export async function GET(request: Request) {
-  const rl = checkRateLimit(request);
-  if (!rl.success && rl.response) return rl.response;
-
-  return NextResponse.json({
-    scope_emissions_kg: 2840.4,
-    delta_pct: -12.4,
-    peak_window: "18:00 - 20:00",
-    offset_saved_kg: 412.8,
-    equivalent_trees: 18,
-    clean_pct: 64.5,
-    mix: [
-      { source: "Solar & Wind", pct: 52.0, kwh: 1477, type: "clean" },
-      { source: "Hydroelectric", pct: 12.5, kwh: 355, type: "clean" },
-      { source: "Regional Thermal Grid", pct: 35.5, kwh: 1008, type: "thermal" },
-    ],
-    last_updated: new Date().toISOString(),
-  });
+  return proxyToBackend(request, "/api/analytics");
 }

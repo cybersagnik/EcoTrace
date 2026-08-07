@@ -1,39 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { NextResponse } from "next/server";
+import { SESSION_COOKIE_NAME } from "@/lib/auth";
 
-// Phase 2 real backend history endpoint mock/proxy
-// In production, queries the Time Series DB / Data Platform §1
+const API_BASE_URL = process.env.BACKEND_API_URL || "http://api:3003";
+
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } },
 ) {
-  const rl = checkRateLimit(request);
-  if (!rl.success && rl.response) return rl.response;
+  const url = `${API_BASE_URL}/api/devices/${encodeURIComponent(params.id)}/history`;
+  const headers = new Headers(request.headers);
+  headers.delete("host");
+  headers.delete("content-length");
 
-  const deviceId = params.id;
+  const cookieHeader = request.headers.get("cookie") || "";
+  if (cookieHeader.includes(`${SESSION_COOKIE_NAME}=`)) {
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`),
+    );
+    if (match) {
+      headers.set(
+        "Authorization",
+        `Bearer ${decodeURIComponent(match[1])}`,
+      );
+    }
+  }
 
-  // Generate 24-point hourly history for the requested device
-  const mockHistory = Array.from({ length: 24 }, (_, i) => {
-    const hourStr = `${i.toString().padStart(2, "0")}:00`;
-    // Add device specific seed variance
-    const seed = deviceId.length * 12;
-    const baseEmissions =
-      220 +
-      Math.sin(((i + seed) / 24) * Math.PI * 2) * 110 +
-      (i % 3) * 15 +
-      (seed % 50);
-    const carbon_g = Math.round(baseEmissions * 10) / 10;
-    return {
-      hour: hourStr,
-      timestamp: new Date(Date.now() - (23 - i) * 3600 * 1000).toISOString(),
-      device_id: deviceId,
-      carbon_g,
-      emissions_raw: Math.round(carbon_g * 1.05 * 100) / 100,
-    };
-  });
-
-  return NextResponse.json({
-    device_id: deviceId,
-    history: mockHistory,
-  });
+  try {
+    const upstream = await fetch(url, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    });
+    const body = await upstream.text();
+    return new NextResponse(body, {
+      status: upstream.status,
+      headers: {
+        "Content-Type":
+          upstream.headers.get("content-type") || "application/json",
+      },
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Backend unreachable", detail: String(err) },
+      { status: 502 },
+    );
+  }
 }

@@ -1,0 +1,5 @@
+Timestamp,Device ID,Hardware Class,OS,Carbon Output (g CO2e),Status,Grid Region,Schema Version
+"2026-08-03T08:38:38.265Z","edge-node-linux-04","linux-server","Ubuntu 22.04 LTS","184.6","operating","US-EAST","1.0.0"
+"2026-08-03T08:38:38.265Z","ws-win-audrey","windows-workstation","Windows 11 Pro","412.1","operating","US-EAST","1.0.0"
+"2026-08-03T08:38:38.265Z","edge-gateway-01","iot-sensor","Debian 12","95.3","operating","US-EAST","1.0.0"
+"2026-08-03T08:38:38.265Z","plc-node-factory-a","plc-controller","Alpine Linux 3.19","310.8","registering","US-EAST","1.0.0"

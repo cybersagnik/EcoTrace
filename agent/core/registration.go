@@ -27,6 +27,12 @@ type RegistrationConfig struct {
 	DeviceClass     string // linux | windows
 	Hostname        string
 	OS              string
+	// Notification consent — declared at registration time. Adapters that
+	// implement core.NotificationInbox opt in; others leave these defaults
+	// (no consent → the control plane will refuse to notify the device).
+	NotificationConsent       bool
+	NotificationChannel       string
+	NotificationPollIntervalS int
 	// SECURITY: TLS config for the HTTP client
 	HTTPClient *http.Client
 }
@@ -116,12 +122,15 @@ func (sm *RegistrationStateMachine) UpdateCredentials(creds Credentials) error {
 // SECURITY: bootstrap_token is sent over TLS only (enforced by nginx config).
 // SECURITY: response body is limited to 64KB to prevent memory exhaustion.
 func (sm *RegistrationStateMachine) callRegistrationService(pubKey []byte) (Credentials, error) {
-	payload := map[string]string{
-		"bootstrap_token": sm.config.BootstrapToken,
-		"device_class":    sm.config.DeviceClass,
-		"hostname":        sm.config.Hostname,
-		"os":              sm.config.OS,
-		"public_key":      string(pubKey),
+	payload := map[string]interface{}{
+		"bootstrap_token":              sm.config.BootstrapToken,
+		"device_class":                 sm.config.DeviceClass,
+		"hostname":                     sm.config.Hostname,
+		"os":                           sm.config.OS,
+		"public_key":                   string(pubKey),
+		"notification_consent":         sm.config.NotificationConsent,
+		"notification_channel":         sm.config.NotificationChannel,
+		"notification_poll_interval_s": sm.config.NotificationPollIntervalS,
 	}
 
 	body, err := json.Marshal(payload)

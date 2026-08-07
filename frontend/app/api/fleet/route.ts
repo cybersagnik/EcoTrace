@@ -1,55 +1,57 @@
 import { NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { SESSION_COOKIE_NAME } from "@/lib/auth";
 
-const mockFleetSummary = {
-  total_carbon_kg: 12.4,
-  total_carbon_g: 12400.0,
-  delta_pct_vs_yesterday: -3.1,
-  grid_region: "US-EAST",
-  last_sync_seconds_ago: 30,
-  last_updated: new Date().toISOString(),
-  intensity: "moderate",
-  active_devices: 4,
-};
+const API_BASE_URL = process.env.BACKEND_API_URL || "http://api:3003";
 
-const mockTrend = [
-  { day: "Mon", carbon_kg: 13.8 },
-  { day: "Tue", carbon_kg: 14.2 },
-  { day: "Wed", carbon_kg: 15.6 },
-  { day: "Thu", carbon_kg: 16.9 },
-  { day: "Fri", carbon_kg: 12.1 },
-  { day: "Sat", carbon_kg: 10.4 },
-  { day: "Sun", carbon_kg: 12.4 },
-];
+async function proxyToBackend(
+  request: Request,
+  path: string,
+): Promise<NextResponse> {
+  const url = `${API_BASE_URL}${path}`;
+  const headers = new Headers(request.headers);
+  headers.delete("host");
+  headers.delete("content-length");
 
-const mockHourlyTrend = Array.from({ length: 24 }, (_, i) => {
-  const hourStr = `${i.toString().padStart(2, "0")}:00`;
-  const baseEmissions = 350 + Math.sin((i / 24) * Math.PI * 2) * 150 + (i % 3) * 20;
-  const roundedCarbonG = Math.round(baseEmissions * 10) / 10;
-  return {
-    hour: hourStr,
-    carbon_g: roundedCarbonG,
-    emissions_raw: Math.round(roundedCarbonG * 1.05 * 100) / 100,
+  const cookieHeader = request.headers.get("cookie") || "";
+  if (cookieHeader.includes(`${SESSION_COOKIE_NAME}=`)) {
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`),
+    );
+    if (match) {
+      headers.set(
+        "Authorization",
+        `Bearer ${decodeURIComponent(match[1])}`,
+      );
+    }
+  }
+
+  const init: RequestInit = {
+    method: request.method,
+    headers,
+    cache: "no-store",
   };
-});
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    init.body = await request.text();
+  }
 
-const mockRegions = [
-  { region: "US-EAST (N. Virginia)", carbon_kg: 5.2, active_devices: 2 },
-  { region: "EU-WEST (Frankfurt)", carbon_kg: 4.1, active_devices: 1 },
-  { region: "AP-SOUTH (Mumbai)", carbon_kg: 3.1, active_devices: 1 },
-];
+  try {
+    const upstream = await fetch(url, init);
+    const body = await upstream.text();
+    return new NextResponse(body, {
+      status: upstream.status,
+      headers: {
+        "Content-Type":
+          upstream.headers.get("content-type") || "application/json",
+      },
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Backend unreachable", detail: String(err) },
+      { status: 502 },
+    );
+  }
+}
 
 export async function GET(request: Request) {
-  const rl = checkRateLimit(request);
-  if (!rl.success && rl.response) return rl.response;
-
-  return NextResponse.json({
-    summary: {
-      ...mockFleetSummary,
-      last_updated: new Date().toISOString(),
-    },
-    trend: mockTrend,
-    hourly_trend: mockHourlyTrend,
-    regions: mockRegions,
-  });
+  return proxyToBackend(request, "/api/fleet");
 }

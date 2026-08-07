@@ -7,9 +7,10 @@ export function useFleet(pollingIntervalMs: number = 30000) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchFleet = useCallback(() => {
+    setError(null);
     getFleetSummary()
       .then(setFleet)
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e.message ?? String(e)));
   }, []);
 
   useEffect(() => {

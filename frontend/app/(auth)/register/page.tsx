@@ -23,11 +23,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="rounded-card border border-border/80 bg-panel-solid/90 p-8 shadow-glass backdrop-blur-glass space-y-6">
+    <div className="rounded border border-border bg-panel p-8 space-y-6">
       <div className="text-center space-y-2">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-sky-400 p-0.5 shadow-glow-clean">
-          <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-bg">
-            <Leaf className="h-6 w-6 text-emerald-400" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-accent p-0.5">
+          <div className="flex h-full w-full items-center justify-center rounded bg-bg">
+            <Leaf className="h-6 w-6 text-success" />
           </div>
         </div>
         <h1 className="font-display text-2xl font-bold tracking-tight text-text">
@@ -49,7 +49,7 @@ export default function RegisterPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Jane Doe"
-              className="w-full rounded-xl border border-border/80 bg-bg/80 pl-10 pr-3 py-2.5 text-text placeholder-text-faint focus:border-accent focus:outline-none transition-all"
+              className="w-full rounded border border-border bg-elevated/40 pl-10 pr-3 py-2.5 text-text placeholder-text-faint focus:border-accent focus:outline-none transition-colors"
             />
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function RegisterPage() {
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="Acme Sustainability Corp"
-              className="w-full rounded-xl border border-border/80 bg-bg/80 pl-10 pr-3 py-2.5 text-text placeholder-text-faint focus:border-accent focus:outline-none transition-all"
+              className="w-full rounded border border-border bg-elevated/40 pl-10 pr-3 py-2.5 text-text placeholder-text-faint focus:border-accent focus:outline-none transition-colors"
             />
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="jane@acme.com"
-              className="w-full rounded-xl border border-border/80 bg-bg/80 pl-10 pr-3 py-2.5 text-text placeholder-text-faint focus:border-accent focus:outline-none transition-all"
+              className="w-full rounded border border-border bg-elevated/40 pl-10 pr-3 py-2.5 text-text placeholder-text-faint focus:border-accent focus:outline-none transition-colors"
             />
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 font-mono text-xs font-semibold text-bg hover:bg-sky-400 transition-all shadow-glow active:scale-95 cursor-pointer disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded bg-accent py-3 font-mono text-xs font-semibold text-bg hover:bg-accent-hover transition-colors cursor-pointer disabled:opacity-50"
         >
           {loading ? (
             <>
@@ -103,7 +103,7 @@ export default function RegisterPage() {
         </button>
       </form>
 
-      <div className="text-center text-xs text-text-faint pt-2 border-t border-border/40">
+      <div className="text-center text-xs text-text-faint pt-2 border-t border-border">
         Already have an account?{" "}
         <Link href="/login" className="text-accent font-semibold hover:underline">
           Sign In

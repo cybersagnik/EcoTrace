@@ -8,9 +8,10 @@ export function useRecommendation(pollingIntervalMs: number = 30000) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchReco = useCallback(() => {
+    setError(null);
     getRecommendations()
       .then(setData)
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e.message ?? String(e)));
   }, []);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-/* EcoTrace Design System v1.0 Typography & Micro-Interaction System */
+/* EcoTrace Design System v1.1 — Enterprise Sustainability Observability */
 
 html {
   color-scheme: dark;
@@ -19,37 +19,37 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Typography Hierarchy Rules (Inter, 700 weight, -0.03em letter spacing) */
+/* Typography Hierarchy — compact, data-dense */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   color: var(--text-primary);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-}
-
-h2 {
-  font-size: 1.75rem;
-  line-height: 2.125rem;
-}
-
-h3 {
-  font-size: 1.375rem;
+  font-size: 1.25rem;
   line-height: 1.75rem;
 }
 
-h4 {
+h2 {
   font-size: 1.125rem;
   line-height: 1.5rem;
 }
 
-h5, h6 {
+h3 {
   font-size: 1rem;
-  line-height: 1.5rem;
+  line-height: 1.375rem;
+}
+
+h4 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+h5, h6 {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
 }
 
 p {
@@ -74,107 +74,92 @@ code, kbd, samp, pre {
   font-family: var(--font-mono);
 }
 
-/* Design System v1.0 Glassmorphism Panel */
+/* Data & metric values — tabular numbers, tight tracking */
+.font-tabular,
+[data-metric] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* All-caps micro labels (SCOPE 1 & 2, PEAK INTENSITY) */
+.label-caps {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Flat surface panel (replaces glassmorphism) */
 .glass-panel {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--panel-solid);
+  border: 1px solid var(--border);
 }
 
-[data-theme="light"] .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-[data-theme="dark"] .glass-panel {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(51, 65, 85, 0.8);
-}
-
-/* Card Micro-Interactions (Hover -6px, 300ms transition) */
+/* Card — flat rectangle, border only, no elevation */
 .eco-card {
   border-radius: var(--radius-card);
   background-color: var(--panel-solid);
   border: 1px solid var(--border);
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1), border-color 300ms ease;
+  transition: border-color 0.2s ease;
 }
 
-.eco-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-md);
-  border-color: rgba(22, 163, 74, 0.35);
-}
-
-/* Design System Button Utility Classes (16px Radius) */
+/* Design System Button Utility Classes */
 .btn-primary {
   display: inline-flex;
-  items-center: center;
+  align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border-radius: var(--radius-button);
-  background-color: #16A34A;
-  color: #FFFFFF;
+  background-color: var(--accent);
+  color: var(--text-inverse);
   font-weight: 600;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  border: 1px solid var(--accent);
+  transition: opacity 0.2s ease;
   cursor: pointer;
 }
 
 .btn-primary:hover {
-  background-color: #15803D;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.35);
+  opacity: 0.85;
 }
 
 .btn-secondary {
   display: inline-flex;
-  items-center: center;
+  align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border-radius: var(--radius-button);
   background-color: transparent;
-  border: 1px solid #16A34A;
-  color: #16A34A;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
   font-weight: 600;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.2s ease, color 0.2s ease;
   cursor: pointer;
 }
 
 .btn-secondary:hover {
-  background-color: #DCFCE7;
-  color: #166534;
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
-[data-theme="dark"] .btn-secondary:hover {
-  background-color: rgba(22, 163, 74, 0.15);
-  color: #4ADE80;
-}
-
-/* Design System Input Utility Classes (14px Radius) */
+/* Input Utility Class */
 .input-eco {
   border-radius: var(--radius-input);
   background-color: var(--elevated);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 0.625rem 1rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  transition: all 300ms ease;
+  transition: border-color 0.2s ease;
 }
 
 .input-eco:focus {
   outline: none;
-  border-color: #16A34A;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
-}
-
-/* Editorial Vignette Mask */
-.mask-radial-vignette {
-  mask-image: radial-gradient(circle at 75% 35%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 80%);
-  -webkit-mask-image: radial-gradient(circle at 75% 35%, rgba(0, 0, 0, 1) 25%, rgba(0, 0, 0, 0) 80%);
+  border-color: var(--accent);
 }
 
 /* Select & Option Dropdown Styling */
@@ -185,8 +170,8 @@ select option {
 }
 
 [data-theme="dark"] select option {
-  background-color: #0F172A !important;
-  color: #F8FAFC !important;
+  background-color: #111720 !important;
+  color: #E2E8F0 !important;
 }
 
 [data-theme="light"] select option {

@@ -1,171 +1,228 @@
 import { getIsDemoMode } from "./demoMode";
+import { clearSessionToken } from "./auth";
 
 /**
- * Pre-recorded, crash-proof fallback data dictionary.
- * Used when Demo Mode is explicitly enabled or when live network/API calls fail.
+ * On an unauthenticated 401 response, drop the stale session token and
+ * bounce to the login page — unless we're already there (the login POST
+ * goes through a raw fetch and never reaches this path, so no loop).
  */
-const MOCK_FALLBACKS: Record<string, unknown> = {
-  "/api/fleet": {
-    summary: {
-      total_carbon_kg: 12.4,
-      total_carbon_g: 12400.0,
-      delta_pct_vs_yesterday: -3.1,
-      grid_region: "US-EAST",
-      last_sync_seconds_ago: 12,
-      last_updated: new Date().toISOString(),
-      intensity: "moderate",
-      active_devices: 4,
-    },
-    trend: [
-      { day: "Mon", carbon_kg: 13.8 },
-      { day: "Tue", carbon_kg: 14.2 },
-      { day: "Wed", carbon_kg: 15.6 },
-      { day: "Thu", carbon_kg: 16.9 },
-      { day: "Fri", carbon_kg: 12.1 },
-      { day: "Sat", carbon_kg: 10.4 },
-      { day: "Sun", carbon_kg: 12.4 },
-    ],
-    hourly_trend: Array.from({ length: 24 }, (_, i) => ({
-      hour: `${i.toString().padStart(2, "0")}:00`,
-      carbon_g: Math.round((350 + Math.sin((i / 24) * Math.PI * 2) * 150) * 10) / 10,
-      emissions_raw: Math.round((350 + Math.sin((i / 24) * Math.PI * 2) * 150) * 1.05 * 100) / 100,
-    })),
-    regions: [
-      { region: "US-EAST (N. Virginia)", carbon_kg: 5.2, active_devices: 2 },
-      { region: "EU-WEST (Frankfurt)", carbon_kg: 4.1, active_devices: 1 },
-      { region: "AP-SOUTH (Mumbai)", carbon_kg: 3.1, active_devices: 1 },
-    ],
-  },
-  "/api/devices": [
-    {
-      device_id: "edge-node-linux-04",
-      device_class: "linux-server",
-      os: "Ubuntu 22.04 LTS",
-      carbon_g: 184.6,
-      status: "operating",
-      schema_version: "1.0.0",
-    },
-    {
-      device_id: "ws-win-audrey",
-      device_class: "windows-workstation",
-      os: "Windows 11 Pro",
-      carbon_g: 412.1,
-      status: "operating",
-      schema_version: "1.0.0",
-    },
-    {
-      device_id: "edge-gateway-01",
-      device_class: "iot-sensor",
-      os: "Debian 12 (Bookworm)",
-      carbon_g: 95.3,
-      status: "operating",
-      schema_version: "1.0.0",
-    },
-    {
-      device_id: "plc-node-factory-a",
-      device_class: "plc-controller",
-      os: "Alpine Linux 3.19",
-      carbon_g: 310.8,
-      status: "registering",
-      schema_version: "1.0.0",
-    },
-  ],
-  "/api/analytics": {
-    scope_emissions_kg: 2840.4,
-    delta_pct: -12.4,
-    peak_window: "18:00 - 20:00",
-    offset_saved_kg: 412.8,
-    equivalent_trees: 18,
-    clean_pct: 64.5,
-    mix: [
-      { source: "Solar & Wind", pct: 52.0, kwh: 1477, type: "clean" },
-      { source: "Hydroelectric", pct: 12.5, kwh: 355, type: "clean" },
-      { source: "Regional Thermal Grid", pct: 35.5, kwh: 1008, type: "thermal" },
-    ],
-    last_updated: new Date().toISOString(),
-  },
-  "/api/recommendation": {
-    recommendations: [
-      {
-        id: "reco-01",
-        title: "Shift Heavy Compute to EU-West (Frankfurt)",
-        description: "EU-West grid carbon intensity is currently 82% wind & solar (98 gCO2e/kWh vs 240 gCO2e/kWh in US-East). Auto-routing workloads will save 18.4 kg CO2e daily.",
-        impact_kg: 18.4,
-        region: "EU-West",
-        priority: "critical",
-        action_label: "Execute Load Shift",
-      },
-      {
-        id: "reco-02",
-        title: "Initiate Solar Battery Storage Discharge",
-        description: "Datacenter battery reserves are 100% charged. Discharging during 18:00-20:00 peak grid load cuts Scope 2 carbon footprint.",
-        impact_kg: 14.2,
-        region: "US-East",
-        priority: "high",
-        action_label: "Trigger Battery Discharge",
-      },
-      {
-        id: "reco-03",
-        title: "Throttle High-Intensity Workstation (ws-win-audrey)",
-        description: "Device ws-win-audrey is consuming 412.1g CO2e/hr (Top Emitter). Enabling dynamic power management caps consumption below 250g.",
-        impact_kg: 8.6,
-        region: "US-East",
-        priority: "medium",
-        action_label: "Apply Eco Profile",
-      },
-    ],
-    total_potential_savings_kg: 41.2,
-    last_computed: new Date().toISOString(),
-  },
-  "/api/health": {
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  },
-};
+function redirectToLogin(): void {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname.startsWith("/login")) return;
+  clearSessionToken();
+  window.location.assign("/login");
+}
 
-function getFallbackPayload<T>(url: string): T {
-  // Direct matching
-  if (MOCK_FALLBACKS[url]) {
-    return MOCK_FALLBACKS[url] as T;
-  }
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
 
-  // Device history pattern matching (/api/devices/:id/history)
-  if (url.includes("/devices/") && url.includes("/history")) {
-    const parts = url.split("/");
-    const deviceId = parts[3] || "device-node";
-    return {
-      device_id: deviceId,
-      history: Array.from({ length: 24 }, (_, i) => ({
-        hour: `${i.toString().padStart(2, "0")}:00`,
-        carbon_g: Math.round((180 + Math.sin((i / 24) * Math.PI * 2) * 60) * 10) / 10,
-        emissions_raw: Math.round((180 + Math.sin((i / 24) * Math.PI * 2) * 60) * 1.05 * 100) / 100,
-      })),
-    } as unknown as T;
-  }
-
-  // Generic fallback if unknown endpoint
-  return {} as T;
+export function resolveUrl(url: string): string {
+  if (/^https?:\/\//.test(url)) return url;
+  return `${API_BASE_URL}${url}`;
 }
 
 /**
- * Non-invasive fetch wrapper. Intercepts network calls safely if Demo Mode is active
- * or if network/API server encounters errors during live presentations.
+ * Strict fetch wrapper — NEVER falls back to mock data.
+ *
+ * Only Demo Mode (explicit user opt-in via localStorage) returns
+ * pre-recorded payloads so the demo button still works in
+ * presentations when the backend is unreachable. In all other
+ * cases (network failure, 5xx, 401) errors propagate so the UI
+ * can show the real status instead of pretending everything is
+ * fine.
  */
 export async function fetcher<T>(url: string, init?: RequestInit): Promise<T> {
-  // If Demo Mode is explicitly toggled ON, serve crash-proof mock instantly
+  const resolved = resolveUrl(url);
+
   if (getIsDemoMode()) {
-    return getFallbackPayload<T>(url);
+    return getDemoPayload<T>(resolved);
   }
 
   try {
-    const res = await fetch(url, init);
+    const res = await fetch(resolved, init);
     if (!res.ok) {
-      // Safe fallback on HTTP errors (e.g. 500, 429)
-      return getFallbackPayload<T>(url);
+      if (res.status === 401) redirectToLogin();
+      const text = await res.text().catch(() => "");
+      throw new ApiError(res.status, text || res.statusText, resolved);
     }
     return (await res.json()) as T;
-  } catch {
-    // Safe fallback on network exceptions / offline mode
-    return getFallbackPayload<T>(url);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(0, (err as Error).message, resolved);
   }
+}
+
+export class ApiError extends Error {
+  status: number;
+  body: string;
+  url: string;
+  constructor(status: number, body: string, url: string) {
+    super(`API ${status} on ${url}: ${body.slice(0, 200)}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+    this.url = url;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo Mode payloads
+//
+// ONLY used when the user explicitly enables Demo Mode in the navbar.
+// All other code paths throw on failure and surface the real error.
+// ─────────────────────────────────────────────────────────────────────
+const DEMO_DEVICES = [
+  {
+    device_id: "edge-node-linux-04",
+    device_class: "linux-server",
+    os: "Ubuntu 22.04 LTS",
+    hostname: "edge-node-linux-04",
+    carbon_g: 184.6,
+    energy_wh_today: 1.1,
+    sample_count: 1,
+    status: "operating",
+    last_seen_at: new Date().toISOString(),
+    schema_version: "v1.0",
+  },
+  {
+    device_id: "ws-win-audrey",
+    device_class: "windows-workstation",
+    os: "Windows 11 Pro",
+    hostname: "ws-win-audrey",
+    carbon_g: 412.1,
+    energy_wh_today: 2.4,
+    sample_count: 1,
+    status: "operating",
+    last_seen_at: new Date().toISOString(),
+    schema_version: "v1.0",
+  },
+  {
+    device_id: "edge-gateway-01",
+    device_class: "iot-sensor",
+    os: "Debian 12 (Bookworm)",
+    hostname: "edge-gateway-01",
+    carbon_g: 95.3,
+    energy_wh_today: 0.6,
+    sample_count: 1,
+    status: "operating",
+    last_seen_at: new Date().toISOString(),
+    schema_version: "v1.0",
+  },
+];
+
+function getDemoPayload<T>(url: string): T {
+  const path = url.replace(/^https?:\/\/[^/]+/, "");
+
+  if (path === "/api/devices") return DEMO_DEVICES as unknown as T;
+
+  if (path === "/api/fleet") {
+    const total_carbon_g = DEMO_DEVICES.reduce((s, d) => s + d.carbon_g, 0);
+    return {
+      summary: {
+        active_devices: DEMO_DEVICES.length,
+        total_carbon_g,
+        total_carbon_kg: total_carbon_g / 1000,
+        total_energy_wh: DEMO_DEVICES.reduce((s, d) => s + d.energy_wh_today, 0),
+        delta_pct_vs_yesterday: -3.1,
+        grid_region: "US-CAL",
+        last_sync_seconds_ago: 12,
+        last_updated: new Date().toISOString(),
+        intensity: total_carbon_g < 250 ? "clean" : "moderate",
+      },
+      trend: [],
+      hourly_trend: [],
+      regions: [
+        { region: "US-CAL", carbon_kg: total_carbon_g / 1000, active_devices: DEMO_DEVICES.length },
+      ],
+    } as unknown as T;
+  }
+
+  if (path === "/api/recommendation") {
+    return {
+      recommendations: [
+        {
+          id: "rec-demo-1",
+          title: "Demo recommendation (Demo Mode)",
+          description: "Enable Demo Mode is on — no real telemetry is flowing.",
+          impact_kg: 0.0,
+          region: "US-CAL",
+          priority: "medium",
+          action_label: "Disable Demo Mode",
+        },
+      ],
+      total_potential_savings_kg: 0,
+      last_computed: new Date().toISOString(),
+    } as unknown as T;
+  }
+
+  if (path === "/api/health") {
+    return { status: "ok", timestamp: new Date().toISOString() } as unknown as T;
+  }
+
+  if (path === "/api/alerts") {
+    const now = Date.now();
+    return {
+      alerts: [
+        {
+          id: "demo-alert-1",
+          title: "High Carbon Intensity Threshold Exceeded (Demo Mode)",
+          device: DEMO_DEVICES[0].device_id,
+          time: new Date(now - 10 * 60000).toISOString(),
+          severity: "critical",
+          message: "Demo Mode is active — this alert mirrors real telemetry once a device is online.",
+          acknowledged: false,
+        },
+        {
+          id: "demo-alert-2",
+          title: "Telemetry Sensor Degraded Signal (Demo Mode)",
+          device: DEMO_DEVICES[1].device_id,
+          time: new Date(now - 45 * 60000).toISOString(),
+          severity: "warning",
+          message: "Demo Mode is active — no real sensor has been degraded.",
+          acknowledged: false,
+        },
+      ],
+      generated_at: new Date().toISOString(),
+    } as unknown as T;
+  }
+
+  if (path === "/api/overview") {
+    const now = Date.now();
+    return {
+      metrics: {
+        active_devices: DEMO_DEVICES.length,
+        offline_devices: 0,
+        total_carbon_kg: DEMO_DEVICES.reduce((s, d) => s + d.carbon_g, 0) / 1000,
+        delta_pct_vs_yesterday: -3.1,
+        last_updated: new Date().toISOString(),
+      },
+      events: [
+        {
+          id: "demo-evt-1",
+          time: new Date(now - 120000).toISOString(),
+          device: DEMO_DEVICES[0].device_id,
+          event: "Telemetry payload received (Demo Mode)",
+          type: "info",
+        },
+        {
+          id: "demo-evt-2",
+          time: new Date(now - 300000).toISOString(),
+          device: DEMO_DEVICES[1].device_id,
+          event: "Grid intensity auto-matched via WattTime API (Demo Mode)",
+          type: "success",
+        },
+      ],
+    } as unknown as T;
+  }
+
+  if (path === "/api/settings") {
+    return {
+      daily_limit_kg: 300,
+      intensity_threshold_g_per_kwh: 250,
+      grid_provider_configured: false,
+      grid_provider_token_masked: null,
+    } as unknown as T;
+  }
+
+  return {} as T;
 }

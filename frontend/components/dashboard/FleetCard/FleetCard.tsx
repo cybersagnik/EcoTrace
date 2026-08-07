@@ -49,119 +49,111 @@ export function FleetCard({ summary, loading = false, onRetry }: FleetCardProps)
   return (
     <div className="mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {/* Stat Card 1: Total Fleet Carbon */}
-      <div className="eco-card relative overflow-hidden rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white p-6 shadow-sm transition-all duration-300 ease-out hover:-translate-y-[6px] hover:shadow-md hover:border-[#16A34A]/40">
+      <div className="eco-card p-5">
         <div className="flex items-center justify-between text-text-muted mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-text-muted">
             Total Carbon Output
           </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#16A34A]/15 text-[#16A34A]">
-            <Leaf className="h-4 w-4" />
-          </div>
+          <Leaf className="h-3.5 w-3.5 text-text-faint" />
         </div>
-        <div className="flex items-baseline gap-2 font-mono text-3xl font-bold text-text">
+        <div className="flex items-baseline gap-2 font-mono text-[1.75rem] font-semibold text-text tabular-nums">
           {totalCarbonG.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-          <span className="text-sm font-normal text-[#22C55E] font-sans">g CO2e</span>
+          <span className="text-sm font-normal text-success font-sans">g CO2e</span>
         </div>
-        <div className="mt-1 text-xs text-text-faint font-mono">
+        <div className="mt-1 text-xs text-text-muted font-mono tabular-nums">
           ({summary.total_carbon_kg.toFixed(1)} kg equivalent)
         </div>
         <div className="mt-3 flex items-center gap-1.5 font-mono text-xs">
-          <span
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold ${
-              isDown
-                ? "bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30"
-                : "bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20"
-            }`}
-          >
-            {isDown ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-            {formatPct(summary.delta_pct_vs_yesterday)}
-          </span>
-          <span className="text-text-faint">vs yesterday</span>
+          {isDown ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-success">
+              <TrendingDown className="h-3 w-3" />
+              {formatPct(summary.delta_pct_vs_yesterday)} ↓
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-semibold text-high">
+              <TrendingUp className="h-3 w-3" />
+              {formatPct(summary.delta_pct_vs_yesterday)} ↑
+            </span>
+          )}
+          <span className="text-text-muted">vs yesterday</span>
         </div>
       </div>
 
       {/* Stat Card 2: Active Devices */}
-      <div className="eco-card relative overflow-hidden rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white p-6 shadow-sm transition-all duration-300 ease-out hover:-translate-y-[6px] hover:shadow-md hover:border-[#16A34A]/40">
+      <div className="eco-card p-5">
         <div className="flex items-center justify-between text-text-muted mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-text-muted">
             Active Devices
           </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#0EA5E9]/10 text-[#0EA5E9]">
-            <Activity className="h-4 w-4" />
-          </div>
+          <Activity className="h-3.5 w-3.5 text-text-faint" />
         </div>
-        <div className="flex items-baseline gap-2 font-mono text-3xl font-bold text-text">
+        <div className="flex items-baseline gap-2 font-mono text-[1.75rem] font-semibold text-text tabular-nums">
           {summary.active_devices}
-          <span className="text-sm font-normal text-[#22C55E] font-sans">
+          <span className="text-sm font-normal text-success font-sans">
             nodes active
           </span>
         </div>
         <div className="mt-4 flex items-center gap-1.5 text-xs text-text-muted">
-          <span className="h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
-          <span className="text-text-faint">Telemetry Stream Online</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-success" />
+          <span>Telemetry Stream Online</span>
         </div>
       </div>
 
       {/* Stat Card 3: Last Updated */}
-      <div className="eco-card relative overflow-hidden rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white p-6 shadow-sm transition-all duration-300 ease-out hover:-translate-y-[6px] hover:shadow-md hover:border-[#16A34A]/40">
+      <div className="eco-card p-5">
         <div className="flex items-center justify-between text-text-muted mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-text-muted">
             Last Updated
           </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
-            <Clock className="h-4 w-4" />
-          </div>
+          <Clock className="h-3.5 w-3.5 text-text-faint" />
         </div>
-        <div className="font-mono text-2xl font-bold text-text">
+        <div className="font-mono text-[1.5rem] font-semibold text-text tabular-nums">
           {timestampText}
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-text-muted font-mono">
-          <span className="rounded-lg bg-indigo-500/15 px-2.5 py-1 font-semibold text-indigo-400 border border-indigo-500/30">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-success" />
             India Time (IST)
           </span>
-          <span className="rounded-lg bg-[#22C55E]/15 px-2.5 py-1 font-semibold text-[#22C55E] border border-[#22C55E]/30">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-success" />
             Live
           </span>
         </div>
       </div>
 
       {/* Stat Card 4: Grid Region Intensity */}
-      <div className="eco-card relative overflow-hidden rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white p-6 shadow-sm transition-all duration-300 ease-out hover:-translate-y-[6px] hover:shadow-md hover:border-[#16A34A]/40">
+      <div className="eco-card p-5">
         <div className="flex items-center justify-between text-text-muted mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-faint">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-text-muted">
             Grid Region Intensity
           </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#F59E0B]/10 text-[#F59E0B]">
-            <Zap className="h-4 w-4" />
-          </div>
+          <Zap className="h-3.5 w-3.5 text-text-faint" />
         </div>
-        <div className="flex items-baseline gap-2 font-display text-2xl font-bold text-text">
+        <div className="flex items-baseline gap-2 font-display text-[1.5rem] font-semibold text-text">
           {summary.grid_region}
-          <span className="rounded-lg bg-[#F59E0B]/15 px-2.5 py-1 font-mono text-xs font-semibold text-[#F59E0B] border border-[#F59E0B]/30">
+          <span className="font-mono text-xs font-semibold text-moderate">
             Moderate
           </span>
         </div>
         <div className="mt-3 text-xs text-text-muted flex items-center gap-1.5">
-          <span className="font-mono text-text">240 gCO2e/kWh</span> avg grid mix
+          <span className="font-mono text-text tabular-nums">240 gCO2e/kWh</span> avg grid mix
         </div>
       </div>
 
       {/* Spectrum Bar Across Bottom */}
-      <div className="col-span-full eco-card rounded-[24px] border border-border bg-panel-solid dark:bg-[#0F172A] bg-white p-5 shadow-sm">
+      <div className="col-span-full eco-card p-5">
         <div className="flex items-center justify-between text-xs font-medium text-text-muted mb-2">
           <span>Fleet Intensity Spectrum Gauge</span>
           <span className="font-mono text-success font-semibold">Clean Operating Zone</span>
         </div>
-        <div className="relative h-2.5 w-full rounded-full bg-gradient-to-r from-[#4ADE80] via-amber-500 to-rose-500 shadow-inner">
-          <div
-            className="absolute -top-1 h-4 w-1.5 rounded-full bg-text shadow-md ring-2 ring-bg transition-all duration-300"
-            style={{ left: `${markerLeft}%` }}
-          />
+        <div className="relative h-1 w-full rounded-full bg-[#1E2A36]">
+          <div className="absolute -top-[3px] h-1.5 w-1.5 rounded-full bg-text border border-bg" style={{ left: `${markerLeft}%` }} />
         </div>
-        <div className="mt-2 flex justify-between font-mono text-[11px] text-text-faint">
+        <div className="mt-2 flex justify-between font-mono text-[11px] text-text-muted tabular-nums">
           <span className="text-success font-semibold">Clean (&lt;150 kg)</span>
-          <span className="text-amber-700 dark:text-amber-400 font-semibold">Moderate (150-300 kg)</span>
-          <span className="text-rose-600 dark:text-rose-400 font-semibold">Intensive (&gt;300 kg)</span>
+          <span className="text-moderate font-semibold">Moderate (150-300 kg)</span>
+          <span className="text-high font-semibold">Intensive (&gt;300 kg)</span>
         </div>
       </div>
     </div>

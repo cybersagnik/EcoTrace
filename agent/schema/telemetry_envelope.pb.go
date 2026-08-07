@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v7.35.1
-// source: schema/telemetry_envelope.proto
+// source: telemetry_envelope.proto
 
 package schema
 
@@ -48,6 +48,10 @@ type TelemetryEnvelope struct {
 	// ── Server extensions ────────────────────────
 	LoadAverage_1M float32 `protobuf:"fixed32,30,opt,name=load_average_1m,json=loadAverage1m,proto3" json:"load_average_1m,omitempty"`
 	ProcessCount   int32   `protobuf:"varint,31,opt,name=process_count,json=processCount,proto3" json:"process_count,omitempty"`
+	// ── Process / workload telemetry ─────────────
+	// Per-process samples used for workload & service carbon attribution.
+	// Populated by Tier 1 agents; empty on constrained Tier 2 devices.
+	Processes []*ProcessSample `protobuf:"bytes,50,rep,name=processes,proto3" json:"processes,omitempty"`
 	// ── IoT extensions (Tier 2) ─────────────────
 	BatteryVoltage float32 `protobuf:"fixed32,40,opt,name=battery_voltage,json=batteryVoltage,proto3" json:"battery_voltage,omitempty"`
 	SensorValue    float32 `protobuf:"fixed32,41,opt,name=sensor_value,json=sensorValue,proto3" json:"sensor_value,omitempty"`
@@ -57,7 +61,7 @@ type TelemetryEnvelope struct {
 
 func (x *TelemetryEnvelope) Reset() {
 	*x = TelemetryEnvelope{}
-	mi := &file_schema_telemetry_envelope_proto_msgTypes[0]
+	mi := &file_telemetry_envelope_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -69,7 +73,7 @@ func (x *TelemetryEnvelope) String() string {
 func (*TelemetryEnvelope) ProtoMessage() {}
 
 func (x *TelemetryEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_schema_telemetry_envelope_proto_msgTypes[0]
+	mi := &file_telemetry_envelope_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -82,7 +86,7 @@ func (x *TelemetryEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TelemetryEnvelope.ProtoReflect.Descriptor instead.
 func (*TelemetryEnvelope) Descriptor() ([]byte, []int) {
-	return file_schema_telemetry_envelope_proto_rawDescGZIP(), []int{0}
+	return file_telemetry_envelope_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TelemetryEnvelope) GetSchemaVersion() string {
@@ -197,6 +201,13 @@ func (x *TelemetryEnvelope) GetProcessCount() int32 {
 	return 0
 }
 
+func (x *TelemetryEnvelope) GetProcesses() []*ProcessSample {
+	if x != nil {
+		return x.Processes
+	}
+	return nil
+}
+
 func (x *TelemetryEnvelope) GetBatteryVoltage() float32 {
 	if x != nil {
 		return x.BatteryVoltage
@@ -211,11 +222,90 @@ func (x *TelemetryEnvelope) GetSensorValue() float32 {
 	return 0
 }
 
-var File_schema_telemetry_envelope_proto protoreflect.FileDescriptor
+// A single process observation within the collection window.
+// cpu_percent is the machine-wide share (0.0–100.0) consumed by this
+// process over the window — the sum across processes ≈ envelope.cpu_usage.
+type ProcessSample struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pid           int32                  `protobuf:"varint,1,opt,name=pid,proto3" json:"pid,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                 // executable / process name
+	Service       string                 `protobuf:"bytes,3,opt,name=service,proto3" json:"service,omitempty"`                           // mapped workload (systemd unit, service name, container)
+	CpuPercent    float32                `protobuf:"fixed32,4,opt,name=cpu_percent,json=cpuPercent,proto3" json:"cpu_percent,omitempty"` // machine-wide CPU % over the window
+	RssBytes      int64                  `protobuf:"varint,5,opt,name=rss_bytes,json=rssBytes,proto3" json:"rss_bytes,omitempty"`        // resident set size at sample time
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_schema_telemetry_envelope_proto_rawDesc = "" +
+func (x *ProcessSample) Reset() {
+	*x = ProcessSample{}
+	mi := &file_telemetry_envelope_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessSample) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessSample) ProtoMessage() {}
+
+func (x *ProcessSample) ProtoReflect() protoreflect.Message {
+	mi := &file_telemetry_envelope_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessSample.ProtoReflect.Descriptor instead.
+func (*ProcessSample) Descriptor() ([]byte, []int) {
+	return file_telemetry_envelope_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ProcessSample) GetPid() int32 {
+	if x != nil {
+		return x.Pid
+	}
+	return 0
+}
+
+func (x *ProcessSample) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProcessSample) GetService() string {
+	if x != nil {
+		return x.Service
+	}
+	return ""
+}
+
+func (x *ProcessSample) GetCpuPercent() float32 {
+	if x != nil {
+		return x.CpuPercent
+	}
+	return 0
+}
+
+func (x *ProcessSample) GetRssBytes() int64 {
+	if x != nil {
+		return x.RssBytes
+	}
+	return 0
+}
+
+var File_telemetry_envelope_proto protoreflect.FileDescriptor
+
+const file_telemetry_envelope_proto_rawDesc = "" +
 	"\n" +
-	"\x1fschema/telemetry_envelope.proto\x12\x12ecotrace.telemetry\"\xa8\x05\n" +
+	"\x18telemetry_envelope.proto\x12\x12ecotrace.telemetry\"\xe9\x05\n" +
 	"\x11TelemetryEnvelope\x12%\n" +
 	"\x0eschema_version\x18\x01 \x01(\tR\rschemaVersion\x12+\n" +
 	"\x11collector_version\x18\x02 \x01(\tR\x10collectorVersion\x12\x1b\n" +
@@ -233,54 +323,64 @@ const file_schema_telemetry_envelope_proto_rawDesc = "" +
 	"\tgpu_usage\x18\x14 \x01(\x02R\bgpuUsage\x12(\n" +
 	"\x10cpu_temp_celsius\x18\x15 \x01(\x02R\x0ecpuTempCelsius\x12&\n" +
 	"\x0fload_average_1m\x18\x1e \x01(\x02R\rloadAverage1m\x12#\n" +
-	"\rprocess_count\x18\x1f \x01(\x05R\fprocessCount\x12'\n" +
+	"\rprocess_count\x18\x1f \x01(\x05R\fprocessCount\x12?\n" +
+	"\tprocesses\x182 \x03(\v2!.ecotrace.telemetry.ProcessSampleR\tprocesses\x12'\n" +
 	"\x0fbattery_voltage\x18( \x01(\x02R\x0ebatteryVoltage\x12!\n" +
-	"\fsensor_value\x18) \x01(\x02R\vsensorValueB\"Z github.com/ecotrace/agent/schemab\x06proto3"
+	"\fsensor_value\x18) \x01(\x02R\vsensorValue\"\x8d\x01\n" +
+	"\rProcessSample\x12\x10\n" +
+	"\x03pid\x18\x01 \x01(\x05R\x03pid\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
+	"\aservice\x18\x03 \x01(\tR\aservice\x12\x1f\n" +
+	"\vcpu_percent\x18\x04 \x01(\x02R\n" +
+	"cpuPercent\x12\x1b\n" +
+	"\trss_bytes\x18\x05 \x01(\x03R\brssBytesB\"Z github.com/Ecotrace/agent/schemab\x06proto3"
 
 var (
-	file_schema_telemetry_envelope_proto_rawDescOnce sync.Once
-	file_schema_telemetry_envelope_proto_rawDescData []byte
+	file_telemetry_envelope_proto_rawDescOnce sync.Once
+	file_telemetry_envelope_proto_rawDescData []byte
 )
 
-func file_schema_telemetry_envelope_proto_rawDescGZIP() []byte {
-	file_schema_telemetry_envelope_proto_rawDescOnce.Do(func() {
-		file_schema_telemetry_envelope_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_schema_telemetry_envelope_proto_rawDesc), len(file_schema_telemetry_envelope_proto_rawDesc)))
+func file_telemetry_envelope_proto_rawDescGZIP() []byte {
+	file_telemetry_envelope_proto_rawDescOnce.Do(func() {
+		file_telemetry_envelope_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_telemetry_envelope_proto_rawDesc), len(file_telemetry_envelope_proto_rawDesc)))
 	})
-	return file_schema_telemetry_envelope_proto_rawDescData
+	return file_telemetry_envelope_proto_rawDescData
 }
 
-var file_schema_telemetry_envelope_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_schema_telemetry_envelope_proto_goTypes = []any{
+var file_telemetry_envelope_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_telemetry_envelope_proto_goTypes = []any{
 	(*TelemetryEnvelope)(nil), // 0: ecotrace.telemetry.TelemetryEnvelope
+	(*ProcessSample)(nil),     // 1: ecotrace.telemetry.ProcessSample
 }
-var file_schema_telemetry_envelope_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+var file_telemetry_envelope_proto_depIdxs = []int32{
+	1, // 0: ecotrace.telemetry.TelemetryEnvelope.processes:type_name -> ecotrace.telemetry.ProcessSample
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_schema_telemetry_envelope_proto_init() }
-func file_schema_telemetry_envelope_proto_init() {
-	if File_schema_telemetry_envelope_proto != nil {
+func init() { file_telemetry_envelope_proto_init() }
+func file_telemetry_envelope_proto_init() {
+	if File_telemetry_envelope_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_schema_telemetry_envelope_proto_rawDesc), len(file_schema_telemetry_envelope_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_telemetry_envelope_proto_rawDesc), len(file_telemetry_envelope_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_schema_telemetry_envelope_proto_goTypes,
-		DependencyIndexes: file_schema_telemetry_envelope_proto_depIdxs,
-		MessageInfos:      file_schema_telemetry_envelope_proto_msgTypes,
+		GoTypes:           file_telemetry_envelope_proto_goTypes,
+		DependencyIndexes: file_telemetry_envelope_proto_depIdxs,
+		MessageInfos:      file_telemetry_envelope_proto_msgTypes,
 	}.Build()
-	File_schema_telemetry_envelope_proto = out.File
-	file_schema_telemetry_envelope_proto_goTypes = nil
-	file_schema_telemetry_envelope_proto_depIdxs = nil
+	File_telemetry_envelope_proto = out.File
+	file_telemetry_envelope_proto_goTypes = nil
+	file_telemetry_envelope_proto_depIdxs = nil
 }

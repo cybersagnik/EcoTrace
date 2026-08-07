@@ -12,7 +12,11 @@ import { Bell, Globe, Zap, Menu } from "lucide-react";
 
 const ROUTE_LABELS: Record<string, string> = {
   "/dashboard": "Overview Dashboard",
-  "/devices": "Hardware & IoT Devices",
+  "/devices": "Devices",
+  "/devices/endpoints": "Endpoint Devices",
+  "/devices/iot": "IoT Sensors",
+  "/devices/fleets": "Fleets",
+  "/devices/plc": "PLC Controllers",
   "/fleet": "Multi-Region Fleet",
   "/analytics": "Carbon Analytics & Intensity",
   "/reports": "Sustainability Reports",
@@ -33,13 +37,13 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const currentTitle = ROUTE_LABELS[pathname] || "Dashboard";
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-navbar dark:bg-[#0F172A] bg-white px-4 sm:px-6 py-3 shadow-sm min-h-[56px]">
+    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-panel px-4 sm:px-6 py-3 min-h-[56px]">
       {/* Left: Mobile Hamburger Trigger + Breadcrumb / Page Title */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            className="md:hidden flex items-center justify-center rounded-xl border border-border bg-elevated/50 p-2 text-text-muted hover:text-text hover:border-[#16A34A]/40 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+            className="md:hidden flex items-center justify-center rounded border border-border bg-elevated/50 p-2 text-text-muted hover:text-text hover:border-accent/40 transition-colors cursor-pointer min-h-[44px] min-w-[44px]"
             aria-label="Open Mobile Navigation Menu"
           >
             <Menu className="h-5 w-5 text-text" />
@@ -48,11 +52,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
         <div className="flex items-center gap-2">
           <div className="hidden xs:flex items-center gap-1.5 text-xs font-mono text-text-faint">
-            <Globe className="h-3.5 w-3.5 text-[#16A34A]" />
+            <Globe className="h-3.5 w-3.5 text-accent" />
             <span>ecotrace</span>
             <span>/</span>
           </div>
-          <h1 className="font-display text-xs sm:text-sm font-semibold text-text tracking-wide truncate max-w-[140px] sm:max-w-none">
+          <h1 className="font-display text-[0.95rem] font-semibold text-text tracking-wide truncate max-w-[140px] sm:max-w-none">
             {currentTitle}
           </h1>
         </div>
@@ -64,13 +68,13 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         <button
           onClick={toggleDemoMode}
           title={isDemoMode ? "Demo Mode Active (Pre-recorded Fallback Data)" : "Live Telemetry Mode"}
-          className={`hidden sm:flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] font-semibold transition-all cursor-pointer min-h-[36px] ${
+          className={`hidden sm:flex items-center gap-1.5 rounded border px-3 py-1 font-mono text-[11px] font-semibold transition-colors cursor-pointer min-h-[28px] ${
             isDemoMode
-              ? "border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#F59E0B] shadow-sm"
-              : "border-border/80 bg-elevated/50 text-text-muted hover:text-text hover:border-[#16A34A]/40"
+              ? "border-moderate/40 bg-moderate/10 text-moderate"
+              : "border-border bg-elevated/50 text-text-muted hover:text-text hover:border-accent/40"
           }`}
         >
-          <Zap className={`h-3 w-3 ${isDemoMode ? "text-[#F59E0B] fill-[#F59E0B] animate-pulse" : ""}`} />
+          <Zap className={`h-3 w-3 ${isDemoMode ? "text-moderate" : ""}`} />
           <span>{isDemoMode ? "DEMO MODE: ON" : "LIVE MODE"}</span>
         </button>
 
@@ -83,13 +87,13 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           href="/alerts"
           aria-label="Alert Notifications"
           suppressHydrationWarning
-          className="relative flex items-center justify-center rounded-full border border-border/80 bg-elevated/60 p-2 text-text-muted hover:border-[#16A34A]/40 hover:text-text transition-all cursor-pointer min-h-[40px] min-w-[40px]"
+          className="relative flex items-center justify-center rounded border border-border bg-elevated/60 p-2 text-text-muted hover:border-accent/40 hover:text-text transition-colors cursor-pointer min-h-[36px] min-w-[36px]"
         >
           <Bell className="h-4 w-4" />
           {unacknowledgedCount > 0 && (
             <span
               suppressHydrationWarning
-              className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-[#F59E0B] animate-ping"
+              className="absolute right-1 top-1 flex h-1.5 w-1.5 rounded-full bg-moderate"
             ></span>
           )}
         </Link>

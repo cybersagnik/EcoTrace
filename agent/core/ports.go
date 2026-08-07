@@ -25,6 +25,12 @@ type Metric struct {
 	Name      string
 	Value     float64
 	Timestamp time.Time
+	// Process is set for per-process/workload metrics (Name == "process").
+	// Nil for scalar metrics like cpu_usage / memory_usage. Adapters fill it
+	// with the process observation; Core collects them into the envelope's
+	// processes[] field. This keeps the port surface small while allowing
+	// structured per-workload telemetry.
+	Process *schema.ProcessSample
 }
 
 // TimeRange defines a metric collection window.
