@@ -17,6 +17,7 @@ import {
   Radio,
   Network,
   ChevronRight,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/utils/helpers";
 import { CommandPalette } from "@/components/navigation/CommandPalette";
@@ -80,6 +81,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Carbon Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Reports", href: "/reports", icon: FileText },
   { label: "Alerts", href: "/alerts", icon: Bell, badgeAlert: true },
+  { label: "QA Dashboard", href: "/qa", icon: ClipboardCheck },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 

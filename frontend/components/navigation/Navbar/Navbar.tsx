@@ -21,6 +21,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/analytics": "Carbon Analytics & Intensity",
   "/reports": "Sustainability Reports",
   "/alerts": "Real-time Telemetry Alerts",
+  "/qa": "Telemetry QA Dashboard",
   "/settings": "Platform Configuration",
 };
 

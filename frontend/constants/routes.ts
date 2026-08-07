@@ -12,6 +12,7 @@ export const ROUTES = {
   reports: "/reports",
   alerts: "/alerts",
   settings: "/settings",
+  qa: "/qa",
   login: "/login",
   register: "/register",
   forgotPassword: "/forgot-password",
@@ -24,5 +25,6 @@ export const NAV_ITEMS = [
   { label: "Analytics", href: ROUTES.analytics },
   { label: "Reports", href: ROUTES.reports },
   { label: "Alerts", href: ROUTES.alerts },
+  { label: "QA Dashboard", href: ROUTES.qa },
   { label: "Settings", href: ROUTES.settings },
 ] as const;

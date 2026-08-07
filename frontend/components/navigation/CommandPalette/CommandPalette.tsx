@@ -15,6 +15,7 @@ import {
   Bell,
   Settings,
   ArrowRight,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface CommandItem {
@@ -33,6 +34,7 @@ const COMMAND_ITEMS: CommandItem[] = [
   { title: "Multi-Region Fleet Clusters", category: "Navigation", href: "/fleet", icon: Server },
   { title: "Carbon Analytics & Intensity", category: "Navigation", href: "/analytics", icon: BarChart3 },
   { title: "Sustainability Reports", category: "Navigation", href: "/reports", icon: FileText },
+  { title: "Telemetry QA Dashboard", category: "Navigation", href: "/qa", icon: ClipboardCheck },
   { title: "Real-time Telemetry Alerts", category: "Navigation", href: "/alerts", icon: Bell },
   { title: "Platform Configuration", category: "Navigation", href: "/settings", icon: Settings },
 ];

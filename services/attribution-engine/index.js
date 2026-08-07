@@ -9,13 +9,46 @@ const AGGREGATION_INTERVAL_MS = parseInt(process.env.AGGREGATION_INTERVAL_MS || 
 const PORT = 3004;
 
 // Model constants. Per-device rated TDP / base power come from the devices
-// table (set at registration, device-class aware). Grid intensity comes from
-// the device's assigned fleet; unassigned devices fall back to a regional
-// default. These are only the memory/network coefficients of the model.
+// table (set at registration, device-class aware). Grid intensity is resolved
+// from a region-keyed lookup based on the device's assigned fleet grid_region
+// (authoritative standard values, see map below); an explicitly configured
+// fleet intensity is honoured only for regions NOT covered by the map.
+// Unassigned devices fall back to GLOBAL-DEFAULT. These are only the
+// memory/network coefficients of the model.
 const RAM_W_PER_GB = 4.0;      // ~4W per GB of used RAM
 const RAM_TOTAL_GB = 16.0;     // model machine size for mem-fraction → GB
 const NET_W_PER_GB_H = 0.5;    // 0.5W per GB transferred per hour
-const INTENSITY_DEFAULT = 240; // g CO2e per kWh for unassigned devices
+
+// Grid electricity emission factors — Scope 2 (location-based), g CO2e/kWh.
+// EPA eGRID 2023 (US subregions), EEA 2023 (EU avg), DESNZ 2024 (UK),
+// CEA 2023 (India), IEA 2023 (world avg).
+const GRID_INTENSITY_G_PER_KWH = {
+  'US-CAL': 207,   // EPA eGRID 2023 — US-CAL (CAMX)
+  'US-WEST': 318,  // EPA eGRID 2023 — US-WEST (WECC)
+  'US-EAST': 371,  // EPA eGRID 2023 — US-EAST (SERC)
+  'US-TEXAS': 396, // EPA eGRID 2023 — US-TEXAS (ERCOT)
+  'EU': 255,       // EEA 2023 — EU average
+  'UK': 233,       // DESNZ 2024 — UK average
+  'IN-KOL': 713,   // CEA 2023 — India (Kolkata)
+  'GLOBAL-DEFAULT': 436, // IEA 2023 — world average
+};
+const LEGACY_FLEET_INTENSITY = 240; // old fleets DB default — treated as "unset"
+
+// Power Usage Effectiveness — cooling/facility overhead multiplier on device
+// energy. Default 1.58 = Uptime Institute 2023 global industry average
+// (NOT 1.0; 1.10–1.18 applies only to hyperscale/cloud facilities).
+const PUE_DEFAULT = parseFloat(process.env.PUE_DEFAULT || '1.58');
+
+// Per-device-class power defaults (ASHRAE / SPECpower) used only when the
+// devices table has no rated_tdp_w / base_power_w. base = idle draw,
+// tdp = full-load CPU draw.
+const POWER_DEFAULTS = {
+  linux:   { base: 60, tdp: 250 }, // server: idle 50-80W, full 200-400W
+  windows: { base: 90, tdp: 200 }, // workstation: idle 60-150W, full 150-300W
+  iot:     { base: 2,  tdp: 5 },   // sensor: 0.5-5W
+  plc:     { base: 15, tdp: 25 },  // controller: 5-25W
+};
+
 const DEFAULT_DURATION_S = 30; // seconds, if window fields missing
 
 const pool = new Pool({ connectionString: DATABASE_URL });
@@ -35,8 +68,8 @@ async function runAttribution() {
     const query = `
       SELECT er.id, er.device_id, er.timestamp, er.cpu_usage, er.memory_usage,
              er.network_sent, er.network_received, er.raw_payload,
-             d.rated_tdp_w, d.base_power_w,
-             COALESCE(f.grid_intensity_g_per_kwh, ${INTENSITY_DEFAULT}) as grid_intensity
+             d.device_class, d.rated_tdp_w, d.base_power_w,
+             f.grid_region, f.grid_intensity_g_per_kwh
       FROM emissions_raw er
       JOIN devices d ON d.device_id = er.device_id
       LEFT JOIN fleets f ON f.id = d.fleet_id
@@ -63,10 +96,24 @@ async function runAttribution() {
     const serviceAgg = {}; // key: `${device_id}|${service}` → {energy, carbon, samples}
     
     for (const row of rows) {
-      const { id, device_id, timestamp, cpu_usage, memory_usage, raw_payload } = row;
-      const tdp_w  = parseFloat(row.rated_tdp_w)  || 45;
-      const base_w = parseFloat(row.base_power_w) || 10;
-      const intensity = parseFloat(row.grid_intensity) || INTENSITY_DEFAULT;
+      const { id, device_id, timestamp, cpu_usage, memory_usage, raw_payload, device_class } = row;
+      // Device power defaults (ASHRAE / SPECpower) when the registry has no
+      // rated_tdp_w / base_power_w. Fall back to linux profile for unknown classes.
+      const powerProfile = POWER_DEFAULTS[String(device_class || '').toLowerCase()] || POWER_DEFAULTS.linux;
+      const tdp_w  = parseFloat(row.rated_tdp_w) || powerProfile.tdp;
+      const base_w = parseFloat(row.base_power_w) || powerProfile.base;
+
+      // Grid intensity: fleet grid_region drives a region-keyed lookup
+      // (EPA eGRID 2023 / EEA / DESNZ / CEA / IEA). A fleet-stored intensity
+      // is only honoured when the region is NOT in the map (custom region),
+      // and the legacy 240 default is always treated as unset.
+      const regionKey = String(row.grid_region || '').toUpperCase().trim();
+      const storedIntensity = parseFloat(row.grid_intensity_g_per_kwh);
+      const intensity = GRID_INTENSITY_G_PER_KWH[regionKey]
+        ?? (Number.isFinite(storedIntensity) && storedIntensity > 0 && storedIntensity !== LEGACY_FLEET_INTENSITY
+          ? storedIntensity
+          : GRID_INTENSITY_G_PER_KWH['GLOBAL-DEFAULT']);
+
       const cpu_frac = Math.min(1, (parseFloat(cpu_usage) || 0) / 100);
       const mem_frac = Math.min(1, (parseFloat(memory_usage) || 0) / 100);
       const net_bytes = (parseInt(row.network_sent, 10) || 0) + (parseInt(row.network_received, 10) || 0);
@@ -100,8 +147,9 @@ async function runAttribution() {
       const net_w   = (net_bytes / 1e9) * NET_W_PER_GB_H;
       const energy_wh = (power_w + net_w) * duration_h;
       
-      // carbon_g = energy_wh × grid_intensity (g/kWh) / 1000
-      const carbon_g = energy_wh * intensity / 1000;
+      // carbon_g = energy_wh (Wh) × grid_intensity (g/kWh) / 1000 × PUE
+      // PUE accounts for facility cooling + overhead (Uptime Institute 2023).
+      const carbon_g = energy_wh * intensity / 1000 * PUE_DEFAULT;
       
       attributionResults.push({
         device_id,
@@ -127,7 +175,7 @@ async function runAttribution() {
           if (weight <= 0) continue;
           const service = (p.service || p.name || 'unknown').slice(0, 128);
           const sEnergy = varEnergyWh * weight;
-          const sCarbon = sEnergy * intensity / 1000;
+          const sCarbon = sEnergy * intensity / 1000 * PUE_DEFAULT;
           const key = `${device_id}|${service}`;
           if (!serviceAgg[key]) {
             serviceAgg[key] = { device_id, service, energy: 0, carbon: 0, samples: 0 };
@@ -143,7 +191,7 @@ async function runAttribution() {
         console.log(
           `[attribution-engine] SPOT-CHECK id=${id} device=${device_id} ` +
           `cpu=${cpu_usage}% mem=${(mem_frac * 100).toFixed(1)}% tdp=${tdp_w}W base=${base_w}W ` +
-          `intensity=${intensity} g/kWh duration_h=${duration_h.toFixed(6)} → ` +
+          `intensity=${intensity} g/kWh pue=${PUE_DEFAULT} duration_h=${duration_h.toFixed(6)} → ` +
           `energy_wh=${energy_wh.toFixed(6)} carbon_g=${carbon_g.toFixed(6)}`
         );
       }
@@ -153,7 +201,7 @@ async function runAttribution() {
     if (attributionResults.length > 0) {
       const insertQuery = `
         INSERT INTO emissions_calculated (device_id, timestamp, energy_wh, carbon_g, model_id, created_at)
-        VALUES ($1, $2, $3, $4, 'ecotrace-attribution-v0.2', NOW())
+        VALUES ($1, $2, $3, $4, 'ecotrace-attribution-v0.3', NOW())
       `;
       
       for (const result of attributionResults) {
