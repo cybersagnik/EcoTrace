@@ -296,7 +296,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       <CommandPalette isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Desktop Fixed Sidebar */}
-      <aside className="hidden w-[220px] shrink-0 flex-col justify-between border-r border-border bg-[#0D1117] p-3 md:flex z-10">
+      <aside className="hidden w-[220px] shrink-0 flex-col justify-between border-r border-border bg-panel-solid p-3 md:flex z-10">
         {renderContent()}
       </aside>
 
@@ -311,7 +311,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
           />
 
           {/* Drawer Container */}
-          <aside className="relative flex w-4/5 max-w-xs flex-1 flex-col justify-between border-r border-border bg-[#0D1117] p-3 z-10 animate-slide-in-left">
+          <aside className="relative flex w-4/5 max-w-xs flex-1 flex-col justify-between border-r border-border bg-panel-solid p-3 z-10 animate-slide-in-left">
             {renderContent()}
           </aside>
         </div>

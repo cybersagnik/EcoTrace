@@ -147,7 +147,7 @@ export function FleetCard({ summary, loading = false, onRetry }: FleetCardProps)
           <span>Fleet Intensity Spectrum Gauge</span>
           <span className="font-mono text-success font-semibold">Clean Operating Zone</span>
         </div>
-        <div className="relative h-1 w-full rounded-full bg-[#1E2A36]">
+        <div className="relative h-1 w-full rounded-full bg-border">
           <div className="absolute -top-[3px] h-1.5 w-1.5 rounded-full bg-text border border-bg" style={{ left: `${markerLeft}%` }} />
         </div>
         <div className="mt-2 flex justify-between font-mono text-[11px] text-text-muted tabular-nums">
