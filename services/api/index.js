@@ -1474,6 +1474,33 @@ app.get('/api/alerts', verifyJWT, async (req, res) => {
       });
     }
 
+    // ── AI insights (from ai-advisor background analysis) ──────
+    // Merged into the same feed, tagged source 'ai'. Worst-case a handful
+    // of the most confident active insights so rule alerts stay dominant.
+    const aiQ = `
+      SELECT id, severity, title, message, category, device_id, confidence, recommendation, evidence, created_at
+      FROM ai_alerts
+      WHERE status = 'active'
+      ORDER BY confidence DESC NULLS LAST, created_at DESC
+      LIMIT 5
+    `;
+    const aiR = await pool.query(aiQ);
+    for (const a of aiR.rows) {
+      alerts.push({
+        id: `ai-${a.id}`,
+        title: a.title,
+        device: a.device_id || 'system',
+        time: new Date(a.created_at).toISOString(),
+        severity: ['critical', 'warning', 'info'].includes(a.severity) ? a.severity : 'info',
+        message: a.message,
+        source: 'ai',
+        confidence: a.confidence === null ? null : parseFloat(a.confidence),
+        category: a.category || 'analysis',
+        recommendation: a.recommendation,
+        evidence: Array.isArray(a.evidence) ? a.evidence.slice(0, 6) : [],
+      });
+    }
+
     // Most severe first, then most recent
     const SEVERITY_ORDER = { critical: 0, warning: 1, info: 2 };
     alerts.sort((a, b) => {

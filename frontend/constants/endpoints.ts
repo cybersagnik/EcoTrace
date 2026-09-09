@@ -16,4 +16,7 @@ export const ENDPOINTS = {
   overview: "/api/overview",
   settings: "/api/settings",
   notifications: "/api/notifications",
+  aiStatus: "/api/ai/status",
+  aiAnalyze: "/api/ai/analyze",
+  aiAnalyzeQa: "/api/ai/analyze-qa",
 } as const;

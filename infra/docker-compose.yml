@@ -163,6 +163,32 @@ services:
     networks:
       - ecotrace
 
+  # ─── AI Advisor — scheduled Zen analysis of telemetry ──────────────
+  ai-advisor:
+    build:
+      context: ../services/ai-advisor
+      dockerfile: Dockerfile
+    container_name: ecotrace-ai-advisor
+    restart: always
+    environment:
+      DATABASE_URL:            postgres://ecotrace:${POSTGRES_PASSWORD}@postgres:5432/ecotrace
+      OPENCODE_API_KEY:        ${OPENCODE_API_KEY:-sk-none}
+      OPENCODE_MODEL:          ${OPENCODE_MODEL:-big-pickle}
+      AI_ADVISOR_INTERVAL_MS:  ${AI_ADVISOR_INTERVAL_MS:-1800000}
+      PORT:                    "3005"
+      NODE_ENV:                production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - --tries=1 http://127.0.0.1:3005/health | grep -q 'status' || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    networks:
+      - ecotrace
+
   # ─── REST API (JWT-protected; reachable from nginx & frontend) ───────────
   api:
     build:

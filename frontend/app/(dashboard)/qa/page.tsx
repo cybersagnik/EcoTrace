@@ -18,6 +18,7 @@ import { CarbonByRegionChart } from "@/components/qa/charts/CarbonByRegionChart"
 import { AttributionModelChart } from "@/components/qa/charts/AttributionModelChart";
 import { CpuMemoryChart } from "@/components/qa/charts/CpuMemoryChart";
 import { EnergyTrendChart } from "@/components/qa/charts/EnergyTrendChart";
+import { QaAiInsights } from "@/components/qa/QaAiInsights";
 import { cn } from "@/utils/helpers";
 
 function TabButton({
@@ -166,6 +167,7 @@ function QaDashboardInner() {
           </div>
 
           <ValidationReport />
+          <QaAiInsights />
           <TelemetryTable />
         </>
       )}
