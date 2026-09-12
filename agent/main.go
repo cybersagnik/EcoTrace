@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -62,6 +63,11 @@ func main() {
 		Hostname:        hostname,
 		OS:              "linux",
 		HTTPClient:      httpClient,
+		// Notification consent — opt in via env. Without it the control plane
+		// refuses to notify this device.
+		NotificationConsent:       os.Getenv("AGENT_NOTIFICATION_CONSENT") == "true",
+		NotificationChannel:       envOr("AGENT_NOTIFICATION_CHANNEL", "balloon"),
+		NotificationPollIntervalS: parsePositiveInt(envOr("AGENT_NOTIFICATION_POLL_INTERVAL_S", "30"), 30),
 	}
 
 	sm := core.NewRegistrationSM(regConfig, ks)
@@ -139,4 +145,12 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parsePositiveInt(s string, fallback int) int {
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 {
+		return fallback
+	}
+	return n
 }

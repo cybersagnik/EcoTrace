@@ -42,7 +42,10 @@ export default function AlertsPage() {
       />
 
       <div className="space-y-4">
-        {alerts.map((alert: AlertItem) => (
+        {alerts.map((alert: AlertItem) => {
+          const ai = alert.source === "ai" ? alert : alert.ai_insight;
+          const hasAi = Boolean(ai);
+          return (
           <div
             key={alert.id}
             className={`rounded-card border bg-panel p-5 transition-colors ${
@@ -67,7 +70,7 @@ export default function AlertsPage() {
                 <div>
                   <h3 className="font-display text-sm font-bold text-text flex flex-wrap items-center gap-2">
                     {alert.title}
-                    {alert.source === "ai" && <AiBadge />}
+                    {hasAi && <AiBadge />}
                     {alert.acknowledged && (
                       <span className="rounded bg-accent/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent border border-accent/20">
                         Acknowledged
@@ -78,10 +81,10 @@ export default function AlertsPage() {
                     <span className="text-accent">{alert.device}</span>
                     <span>•</span>
                     <span>{timeAgo(alert.time)}</span>
-                    {alert.source === "ai" && alert.category && (
+                    {hasAi && (alert.category || ai?.category) && (
                       <>
                         <span>•</span>
-                        <span className="uppercase text-blue">{alert.category}</span>
+                        <span className="uppercase text-blue">{alert.category ?? ai?.category}</span>
                       </>
                     )}
                   </div>
@@ -108,18 +111,18 @@ export default function AlertsPage() {
 
             <p className="text-xs text-text-muted leading-relaxed pl-8">{alert.message}</p>
 
-            {alert.source === "ai" && (alert.confidence !== null || alert.recommendation) && (
+            {hasAi && (ai!.confidence !== null || ai!.recommendation) && (
               <div className="mt-3 pl-8 space-y-2">
-                {alert.confidence !== null && alert.confidence !== undefined && (
-                  <ConfidenceMeter value={alert.confidence} />
+                {ai!.confidence !== null && ai!.confidence !== undefined && (
+                  <ConfidenceMeter value={ai!.confidence} />
                 )}
-                {Array.isArray(alert.evidence) && alert.evidence.length > 0 && (
+                {Array.isArray(ai!.evidence) && ai!.evidence.length > 0 && (
                   <div className="rounded border border-border bg-elevated/50 px-3 py-2 text-xs">
                     <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-accent">
                       Evidence
                     </span>
                     <ul className="mt-1 space-y-1 text-text-muted">
-                      {alert.evidence.map((e, i) => (
+                      {ai!.evidence.map((e, i) => (
                         <li key={i} className="flex gap-1.5">
                           <span className="text-accent">•</span>
                           <span>{e}</span>
@@ -128,18 +131,19 @@ export default function AlertsPage() {
                     </ul>
                   </div>
                 )}
-                {alert.recommendation && (
+                {ai!.recommendation && (
                   <div className="rounded border border-blue/20 bg-elevated/50 px-3 py-2 text-xs">
                     <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-blue">
                       Recommendation
                     </span>
-                    <p className="mt-0.5 text-text-muted">{alert.recommendation}</p>
+                    <p className="mt-0.5 text-text-muted">{ai!.recommendation}</p>
                   </div>
                 )}
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

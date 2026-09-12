@@ -1392,6 +1392,20 @@ app.get('/api/alerts', verifyJWT, async (req, res) => {
     `;
     const carbonR = await pool.query(carbonQ);
     const rows = carbonR.rows;
+    // Active carbon-category AI insights — attach the best match (same device
+    // preferred, else the most confident) to each rule-based carbon alert so
+    // the dashboard shows AI analysis alongside the threshold breach.
+    const aiCarbonR = await pool.query(`
+      SELECT id, title, message, category, device_id, confidence, recommendation, evidence
+      FROM ai_alerts
+      WHERE status = 'active' AND category = 'carbon'
+      ORDER BY confidence DESC NULLS LAST, created_at DESC
+    `);
+    const aiCarbonByDevice = {};
+    for (const a of aiCarbonR.rows) {
+      if (a.device_id && !aiCarbonByDevice[a.device_id]) aiCarbonByDevice[a.device_id] = a;
+    }
+    const aiCarbonTop = aiCarbonR.rows[0] || null;
     if (rows.length > 0) {
       const fleetAvg = rows.reduce((sum, r) => sum + (parseFloat(r.carbon_g) || 0), 0) / rows.length;
       for (const r of rows) {
@@ -1399,6 +1413,7 @@ app.get('/api/alerts', verifyJWT, async (req, res) => {
         if (fleetAvg > 0) {
           const pctAbove = ((carbonG - fleetAvg) / fleetAvg) * 100;
           if (pctAbove > 50) {
+            const ai = aiCarbonByDevice[r.device_id] || aiCarbonTop;
             alerts.push({
               id: `alert-critical-carbon-${r.device_id}`,
               title: 'High Carbon Intensity Threshold Exceeded',
@@ -1406,6 +1421,18 @@ app.get('/api/alerts', verifyJWT, async (req, res) => {
               time: new Date().toISOString(),
               severity: 'critical',
               message: `${r.device_id} emitted ${carbonG.toFixed(1)}g CO₂ today — ${Math.round(pctAbove)}% above the fleet average of ${fleetAvg.toFixed(1)}g.`,
+              ...(ai
+                ? {
+                    ai_insight: {
+                      title: ai.title,
+                      message: ai.message,
+                      category: ai.category,
+                      confidence: ai.confidence === null ? null : parseFloat(ai.confidence),
+                      recommendation: ai.recommendation,
+                      evidence: Array.isArray(ai.evidence) ? ai.evidence.slice(0, 6) : [],
+                    },
+                  }
+                : {}),
             });
           }
         }
