@@ -68,7 +68,7 @@ async function buildContext({ pool }) {
       pool.query(`SELECT id, name, grid_region, grid_intensity_g_per_kwh, description
                   FROM fleets ORDER BY name`),
       pool.query(`SELECT key, value FROM settings`),
-      pool.query(`SELECT device_id, date, carbon_g, energy_wh
+      pool.query(`SELECT device_id, TO_CHAR(date, 'YYYY-MM-DD') AS date, carbon_g, energy_wh
                   FROM daily_summaries
                   WHERE date >= CURRENT_DATE - INTERVAL '13 days'
                   ORDER BY device_id, date`),
